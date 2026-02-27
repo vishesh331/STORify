@@ -1,21 +1,3741 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donate to Global Green Initiative</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BATTLEFIELD SIM — Real-Time</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --red: #ff3344;
+    --orange: #ff8800;
+    --blue: #00aaff;
+    --cyan: #00ffdd;
+    --yellow: #ffee00;
+    --purple: #cc44ff;
+    --bg: #020b06;
+    --panel: #040f08;
+    --border: #0a3318;
+    --text: #88ffaa;
+    --dim: #1a4428;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    overflow: hidden;
+    width: 100vw; height: 100vh;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  #header {
+    height: 44px;
+    background: #000;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 16px;
+    gap: 24px; flex-shrink: 0;
+  }
+  #header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; font-weight: 900;
+    color: var(--green);
+    letter-spacing: 4px;
+    text-shadow: 0 0 12px var(--green);
+  }
+  .hstat { font-size: 10px; color: var(--dim); }
+  .hstat span { color: var(--cyan); font-size: 12px; }
+  #clock { margin-left: auto; font-size: 11px; color: var(--orange); letter-spacing: 2px; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    flex: 1; display: flex; overflow: hidden;
+  }
+
+  /* ── LEFT PANEL ── */
+  #left-panel {
+    width: 220px; flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+  }
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--dim); text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  /* Mode selector */
+  #mode-label {
+    font-size: 10px; color: var(--cyan); margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+
+  .attack-btn {
+    width: 100%; padding: 7px 8px; margin-bottom: 4px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 1px;
+    cursor: pointer; text-align: left;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 8px;
+    border-radius: 2px;
+  }
+  .attack-btn:hover { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.04); }
+  .attack-btn.selected { border-color: var(--orange); color: var(--orange); background: rgba(255,136,0,0.08); }
+  .attack-btn .dot {
+    width: 10px; height: 10px; border-radius: 1px; flex-shrink: 0;
+  }
+  .count-sel {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px;
+  }
+  .count-btn {
+    padding: 3px 7px; font-size: 10px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    border-radius: 2px; transition: all 0.15s;
+  }
+  .count-btn:hover { border-color: var(--orange); color: var(--orange); }
+  .count-btn.sel { border-color: var(--orange); color: var(--orange); background: rgba(255,136,0,0.1); }
+
+  /* Defense controls */
+  .def-btn {
+    width: 100%; padding: 6px 8px; margin-bottom: 3px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; cursor: pointer; text-align: left;
+    transition: all 0.15s; border-radius: 2px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .def-btn:hover { border-color: var(--blue); color: var(--blue); background: rgba(0,170,255,0.05); }
+  .def-btn.active-def { border-color: var(--blue); color: var(--blue); background: rgba(0,170,255,0.08); }
+  .def-btn .dot { width: 9px; height: 9px; border-radius: 1px; flex-shrink: 0; }
+
+  /* Base HP bar */
+  #base-hp-wrap { padding: 10px; border-bottom: 1px solid var(--border); }
+  #base-hp-label { font-size: 9px; color: var(--dim); letter-spacing: 2px; margin-bottom: 5px; }
+  #base-hp-bar-outer { height: 8px; background: #0a1a10; border: 1px solid var(--border); border-radius: 1px; overflow: hidden; }
+  #base-hp-bar { height: 100%; background: var(--green); transition: width 0.3s, background 0.5s; }
+  #base-hp-val { font-size: 11px; color: var(--green); margin-top: 4px; }
+
+  /* Kill log */
+  #kill-log {
+    flex: 1; overflow-y: auto; padding: 8px;
+  }
+  #kill-log-title { font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 2px; color: var(--dim); margin-bottom: 6px; }
+  .log-entry {
+    font-size: 9px; line-height: 1.6; color: var(--dim);
+    border-left: 2px solid transparent; padding-left: 5px; margin-bottom: 2px;
+  }
+  .log-entry.kill { color: var(--green); border-color: var(--green); }
+  .log-entry.hit  { color: var(--red);   border-color: var(--red);   }
+  .log-entry.jam  { color: var(--cyan);  border-color: var(--cyan);  }
+  .log-entry.info { color: #446655; border-color: #223322; }
+
+  /* ── CANVAS AREA ── */
+  #canvas-wrap {
+    flex: 1; position: relative; overflow: hidden;
+    background: #000;
+    cursor: crosshair;
+  }
+  canvas { display: block; }
+
+  /* click ripple */
+  .click-ring {
+    position: absolute; pointer-events: none;
+    width: 30px; height: 30px; margin: -15px;
+    border: 2px solid var(--orange);
+    border-radius: 50%;
+    animation: ring-out 0.5s ease-out forwards;
+  }
+  @keyframes ring-out {
+    from { transform: scale(0.3); opacity: 1; }
+    to   { transform: scale(2); opacity: 0; }
+  }
+
+  /* ── RIGHT PANEL ── */
+  #right-panel {
+    width: 200px; flex-shrink: 0;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* Stats */
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 10px; border-bottom: 1px solid #050f07;
+    font-size: 10px;
+  }
+  .stat-row .label { color: var(--dim); }
+  .stat-row .val   { color: var(--cyan); font-size: 11px; }
+
+  /* Active units */
+  #units-list { padding: 6px; overflow-y: auto; flex: 1; }
+  .unit-row {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 4px; border-radius: 2px; margin-bottom: 2px;
+    font-size: 9px; transition: background 0.2s;
+  }
+  .unit-row:hover { background: #0a1f10; }
+  .unit-dot { width: 8px; height: 8px; border-radius: 1px; }
+  .unit-name { color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .unit-pct  { color: var(--dim); width: 28px; text-align: right; }
+
+  /* Instructions overlay */
+  #instructions {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center; pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  #instructions .big { font-family: 'Orbitron', monospace; font-size: 22px; color: var(--green); letter-spacing: 6px; text-shadow: 0 0 30px var(--green); }
+  #instructions .sub { font-size: 12px; color: var(--dim); margin-top: 12px; letter-spacing: 2px; }
+  #instructions .hint { font-size: 10px; color: #1a3322; margin-top: 8px; }
+
+  /* Grid & scan line overlay */
+  #overlay-canvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+
+  /* Control buttons at bottom of left panel */
+  #bottom-controls { padding: 8px; border-top: 1px solid var(--border); }
+  .ctrl-btn {
+    width: 100%; padding: 7px; margin-bottom: 4px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 10px;
+    border-radius: 2px; letter-spacing: 1px; transition: all 0.15s;
+  }
+  #btn-clear {
+    background: rgba(255,51,68,0.08); border: 1px solid rgba(255,51,68,0.3);
+    color: var(--red);
+  }
+  #btn-clear:hover { background: rgba(255,51,68,0.15); border-color: var(--red); }
+  #btn-pause {
+    background: rgba(255,238,0,0.06); border: 1px solid rgba(255,238,0,0.2);
+    color: var(--yellow);
+  }
+  #btn-pause:hover { background: rgba(255,238,0,0.12); border-color: var(--yellow); }
+
+  /* Defense placement mode indicator */
+  #place-mode-badge {
+    display: none; position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,170,255,0.15); border: 1px solid var(--blue);
+    color: var(--blue); font-size: 11px; padding: 5px 14px;
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 2px;
+    pointer-events: none; border-radius: 2px;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── TARGET SELECTOR POPUP ── */
+  #target-popup {
+    display: none;
+    position: absolute;
+    background: #020d05ee;
+    border: 1px solid var(--orange);
+    border-radius: 3px;
+    min-width: 210px;
+    z-index: 100;
+    box-shadow: 0 0 24px rgba(255,136,0,0.25), 0 0 6px rgba(0,0,0,0.8);
+    pointer-events: all;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+  }
+  #target-popup.visible { display: block; }
+  #target-popup-title {
+    background: rgba(255,136,0,0.12);
+    border-bottom: 1px solid #ff880044;
+    padding: 7px 12px;
+    font-family: 'Orbitron', monospace;
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--orange);
+    display: flex; align-items: center; gap: 8px;
+  }
+  #target-popup-subtitle {
+    padding: 5px 12px 6px;
+    font-size: 9px; color: #446644;
+    border-bottom: 1px solid #0a2010;
+    letter-spacing: 1px;
+  }
+  .target-opt {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; cursor: pointer;
+    font-size: 10px; color: var(--text);
+    border-bottom: 1px solid #060f07;
+    transition: background 0.12s;
+    position: relative;
+  }
+  .target-opt:last-child { border-bottom: none; }
+  .target-opt:hover { background: rgba(255,255,255,0.04); }
+  .target-opt:hover .target-name { color: #fff; }
+  .target-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .target-name { flex: 1; letter-spacing: 1px; }
+  .target-dist { color: #2a4a2a; font-size: 9px; }
+  #target-popup-cancel {
+    padding: 7px 12px; text-align: center;
+    font-size: 9px; color: #2a3a2a;
+    cursor: pointer; letter-spacing: 2px;
+    border-top: 1px solid #0a1a0a;
+    transition: color 0.15s;
+  }
+  #target-popup-cancel:hover { color: var(--red); background: rgba(255,51,68,0.05); }
+
+  /* ── VS BOT MODE ── */
+  #bot-mode-bar {
+    background: linear-gradient(90deg, #000c04, #001a08, #000c04);
+    border-bottom: 1px solid #0a3318;
+    padding: 0 16px;
+    display: none;
+    align-items: center; gap: 14px;
+    flex-shrink: 0;
+    font-size: 10px;
+    height: 34px;
+  }
+  #bot-mode-bar.active { display: flex; }
+  #bot-mode-title {
+    font-family: 'Orbitron', monospace; font-size: 11px;
+    color: var(--red); letter-spacing: 3px;
+    text-shadow: 0 0 10px var(--red);
+  }
+  #bot-mode-title.defending { color: var(--green); text-shadow: 0 0 10px var(--green); }
+  .bot-stat { color: var(--dim); font-size: 10px; }
+  .bot-stat span { color: var(--yellow); font-size: 11px; }
+  #bot-budget-bar-outer {
+    width: 100px; height: 6px;
+    background: #0a1a10; border: 1px solid var(--border);
+    border-radius: 1px; overflow: hidden;
+  }
+  #bot-budget-bar { height: 100%; background: var(--yellow); transition: width 0.4s; }
+  #bot-thinking {
+    margin-left: auto; font-size: 9px; color: #446644;
+    letter-spacing: 1px; font-style: italic;
+    max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  #bot-thinking.active { color: var(--cyan); animation: think-blink 1s infinite; }
+  @keyframes think-blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* Bot panel in left sidebar */
+  #bot-panel {
+    display: none; flex-direction: column;
+  }
+  #bot-panel.visible { display: flex; }
+  #bot-difficulty-sel { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .diff-btn {
+    flex: 1; padding: 5px 3px; font-size: 9px; text-align: center;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer; letter-spacing: 1px;
+    font-family: 'Share Tech Mono', monospace; border-radius: 2px;
+    transition: all 0.15s;
+  }
+  .diff-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+  .diff-btn.sel { border-color: var(--yellow); color: var(--yellow); background: rgba(255,238,0,0.08); }
+  .diff-btn.sel.hard { border-color: var(--red); color: var(--red); background: rgba(255,51,68,0.08); }
+  .diff-btn.sel.elite { border-color: var(--purple); color: var(--purple); background: rgba(204,68,255,0.08); }
+
+  #btn-start-bot {
+    width: 100%; padding: 9px; cursor: pointer;
+    font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+    border-radius: 2px; letter-spacing: 2px; transition: all 0.2s;
+    background: rgba(255,51,68,0.08); border: 1px solid rgba(255,51,68,0.4);
+    color: var(--red); text-shadow: 0 0 8px rgba(255,51,68,0.4);
+  }
+  #btn-start-bot:hover {
+    background: rgba(255,51,68,0.15); border-color: var(--red);
+    box-shadow: 0 0 12px rgba(255,51,68,0.2);
+  }
+  #btn-stop-bot {
+    display: none; width: 100%; padding: 9px; cursor: pointer;
+    font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 700;
+    border-radius: 2px; letter-spacing: 2px; transition: all 0.2s;
+    background: rgba(255,136,0,0.08); border: 1px solid rgba(255,136,0,0.3);
+    color: var(--orange);
+  }
+  #btn-stop-bot:hover { background: rgba(255,136,0,0.15); border-color: var(--orange); }
+  .bot-thought-log { padding: 6px 10px; overflow-y: auto; max-height: 130px; }
+  .bot-thought {
+    font-size: 8px; line-height: 1.7; color: #334433;
+    border-left: 2px solid #0a2010; padding-left: 5px; margin-bottom: 1px;
+  }
+  .bot-thought.placing  { color: var(--blue);   border-color: var(--blue);  }
+  .bot-thought.warning  { color: var(--orange);  border-color: var(--orange); }
+  .bot-thought.critical { color: var(--red);     border-color: var(--red);   }
+  .bot-thought.success  { color: var(--green);   border-color: var(--green); }
+  .bot-thought.analysis { color: var(--cyan);    border-color: var(--cyan);  }
+
+  /* Bot deploy animation — placement marker */
+  .bot-deploy-ring {
+    position: absolute; pointer-events: none;
+    border: 2px solid var(--blue); border-radius: 50%;
+    animation: bot-ring-expand 0.8s ease-out forwards;
+  }
+  @keyframes bot-ring-expand {
+    from { width: 10px; height: 10px; margin: -5px; opacity: 1; }
+    to   { width: 60px; height: 60px; margin: -30px; opacity: 0; }
+  }
+
+  /* Game outcome banner */
+  #outcome-banner {
+    display: none; position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #000d05ee; border: 2px solid var(--green);
+    padding: 24px 40px; text-align: center; z-index: 200;
+    border-radius: 3px; backdrop-filter: blur(8px);
+    box-shadow: 0 0 40px rgba(0,255,136,0.2);
+  }
+  #outcome-banner.visible { display: block; }
+  #outcome-banner.defeat { border-color: var(--red); box-shadow: 0 0 40px rgba(255,51,68,0.2); }
+  #outcome-title {
+    font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900;
+    letter-spacing: 6px; margin-bottom: 10px;
+  }
+  #outcome-sub { font-size: 12px; color: var(--dim); letter-spacing: 2px; margin-bottom: 16px; }
+  #outcome-stats { font-size: 10px; color: #446655; margin-bottom: 18px; line-height: 1.9; }
+  #btn-outcome-ok {
+    padding: 9px 24px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 2px;
+    background: transparent; border: 1px solid currentColor;
+    color: var(--green); border-radius: 2px; transition: all 0.15s;
+  }
+  #btn-outcome-ok:hover { background: rgba(0,255,136,0.1); }
+  /* ── FOG OF WAR ── */
+  #fow-canvas {
+    position: absolute; top: 0; left: 0;
+    pointer-events: none; z-index: 15;
+    display: none;
+  }
+  #fow-canvas.active { display: block; }
+
+  .gz-badge {
+    font-size: 8px; background: rgba(255,51,68,0.12);
+    border: 1px solid rgba(255,51,68,0.5); color: var(--red);
+    padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
+    flex-shrink: 0; animation: gz-pulse 1.5s ease-in-out infinite;
+  }
+  @keyframes gz-pulse {
+    0%,100%{ box-shadow: 0 0 4px rgba(255,51,68,0.2); }
+    50%{ box-shadow: 0 0 12px rgba(255,51,68,0.6); border-color: var(--red); }
+  }
+  .new-preset-badge {
+    font-size: 8px; background: rgba(0,170,255,0.08);
+    border: 1px solid rgba(0,170,255,0.3); color: var(--blue);
+    padding: 1px 5px; border-radius: 2px; letter-spacing: 1px; flex-shrink: 0;
+  }
+
+  #fow-status {
+    display: none; position: absolute; top: 50px; right: 10px;
+    background: rgba(0,8,3,0.88); border: 1px solid rgba(255,51,68,0.4);
+    color: var(--red); font-size: 9px; padding: 5px 10px;
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 2px;
+    border-radius: 2px; z-index: 35; pointer-events: none;
+    animation: fow-blink 2s ease-in-out infinite;
+    white-space: nowrap;
+  }
+  #fow-status.visible { display: block; }
+  @keyframes fow-blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  #btn-hide-defense {
+    width: 100%; padding: 6px; margin-bottom: 4px; cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 9px; letter-spacing: 1px;
+    border-radius: 2px; transition: all 0.15s;
+    background: transparent; border: 1px solid rgba(255,238,0,0.2); color: var(--dim);
+  }
+  #btn-hide-defense:hover { border-color: var(--yellow); color: var(--yellow); }
+  #btn-hide-defense.on {
+    background: rgba(255,238,0,0.08); border-color: rgba(255,238,0,0.6); color: var(--yellow);
+    box-shadow: 0 0 8px rgba(255,238,0,0.15);
+  }
+  .recon-reveal-ring {
+    position: absolute; pointer-events: none; border-radius: 50%;
+    border: 1px solid rgba(0,255,136,0.5);
+    animation: recon-ring-out 1.2s ease-out forwards;
+  }
+  @keyframes recon-ring-out {
+    from { width:20px; height:20px; margin:-10px; opacity:0.9; }
+    to   { width:320px; height:320px; margin:-160px; opacity:0; }
+  }
+
+  /* ── MAP UPLOAD & NIGHT VISION ── */
+  #map-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; pointer-events: none;
+    display: none;
+  }
+  #map-bg.visible { display: block; }
+  #canvas-wrap.nv-mode { background: #000; }
+  #canvas-wrap.nv-mode #map-bg {
+    display: block;
+    filter: grayscale(1) sepia(1) hue-rotate(85deg) saturate(4) brightness(0.5) contrast(1.2);
+    opacity: 0.72;
+  }
+  #canvas-wrap.nv-mode canvas { mix-blend-mode: screen; }
+  #nv-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 25; display: none;
+    background: transparent;
+  }
+  #nv-overlay.visible { display: block; }
+
+  #map-upload-zone {
+    border: 1px dashed var(--border); border-radius: 3px;
+    padding: 9px 6px; text-align: center; cursor: pointer;
+    font-size: 9px; color: var(--dim); letter-spacing: 1px;
+    transition: all 0.2s; margin-bottom: 5px;
+  }
+  #map-upload-zone:hover, #map-upload-zone.drag { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.03); }
+  #map-upload-zone .uico { font-size: 18px; display: block; margin-bottom: 3px; opacity: 0.6; }
+  #map-file-input { display: none; }
+  .map-ctrl-row { display: flex; gap: 4px; margin-bottom: 4px; }
+  .map-mini-btn {
+    flex: 1; padding: 5px 4px; font-size: 9px; letter-spacing: 1px; text-align: center;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer; border-radius: 2px;
+    font-family: 'Share Tech Mono', monospace; transition: all 0.15s;
+  }
+  .map-mini-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .map-mini-btn.on { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.07); }
+  .map-mini-btn.danger { color: var(--red); border-color: rgba(255,51,68,0.25); }
+  .map-mini-btn.danger:hover { border-color: var(--red); background: rgba(255,51,68,0.06); }
+  #place-base-badge {
+    display: none; position: absolute; top: 10px; left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255,238,0,0.10); border: 1px solid var(--yellow);
+    color: var(--yellow); font-size: 11px; padding: 6px 16px;
+    font-family: 'Share Tech Mono', monospace; letter-spacing: 2px;
+    pointer-events: none; border-radius: 2px; z-index: 30;
+    animation: pbadge-pulse 1s ease-in-out infinite;
+  }
+  @keyframes pbadge-pulse { 0%,100%{opacity:1;box-shadow:0 0 8px rgba(255,238,0,0.3)} 50%{opacity:0.6;box-shadow:none} }
+
+  /* HP Customize */
+  .hp-row { display: flex; gap: 4px; align-items: center; margin-bottom: 5px; }
+  .hp-row label { font-size: 9px; color: var(--dim); white-space: nowrap; width: 36px; }
+  .hp-input {
+    flex: 1; background: #010806; border: 1px solid var(--border);
+    color: var(--yellow); font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; padding: 4px 6px; border-radius: 2px; outline: none;
+    text-align: center; min-width: 0;
+  }
+  .hp-input:focus { border-color: var(--yellow); }
+  .hp-set-btn {
+    padding: 4px 8px; background: rgba(255,238,0,0.06);
+    border: 1px solid rgba(255,238,0,0.3); color: var(--yellow);
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    cursor: pointer; border-radius: 2px; transition: all 0.15s; white-space: nowrap;
+  }
+  .hp-set-btn:hover { border-color: var(--yellow); background: rgba(255,238,0,0.14); }
+  .hp-presets { display: flex; gap: 3px; }
+  .hp-pre {
+    flex: 1; padding: 4px 2px; font-size: 9px; text-align: center;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--dim); cursor: pointer; border-radius: 2px;
+    font-family: 'Share Tech Mono', monospace; transition: all 0.12s;
+  }
+  .hp-pre:hover { border-color: var(--yellow); color: var(--yellow); }
+
+  .formation-btn {
+    width: 100%; padding: 6px 8px; margin-bottom: 3px;
+    background: transparent; border: 1px solid var(--border);
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; cursor: pointer; text-align: left;
+    transition: all 0.15s; border-radius: 2px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .formation-btn:hover { border-color: var(--green); color: var(--green); background: rgba(0,255,136,0.04); }
+  .formation-btn.preset { border-color: #1a4a2a; }
+  .formation-btn.preset:hover { border-color: var(--cyan); color: var(--cyan); }
+  .formation-btn .f-icon { font-size: 10px; flex-shrink: 0; }
+  .formation-btn .f-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .formation-btn .f-del {
+    color: #2a1a1a; font-size: 10px; padding: 0 2px;
+    transition: color 0.15s; line-height: 1;
+  }
+  .formation-btn .f-del:hover { color: var(--red); }
+  .f-save-row {
+    display: flex; gap: 4px; margin-top: 6px;
+  }
+  .f-save-input {
+    flex: 1; background: #010806; border: 1px solid var(--border);
+    color: var(--text); font-family: 'Share Tech Mono', monospace;
+    font-size: 9px; padding: 4px 6px; border-radius: 2px; outline: none;
+    transition: border-color 0.15s;
+  }
+  .f-save-input:focus { border-color: var(--green); }
+  .f-save-input::placeholder { color: var(--dim); }
+  .f-save-btn {
+    padding: 4px 8px; background: rgba(0,255,136,0.06);
+    border: 1px solid var(--border); color: var(--green);
+    font-family: 'Share Tech Mono', monospace; font-size: 9px;
+    cursor: pointer; border-radius: 2px; transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .f-save-btn:hover { border-color: var(--green); background: rgba(0,255,136,0.12); }
+  .f-tabs {
+    display: flex; border-bottom: 1px solid var(--border); margin-bottom: 6px;
+  }
+  .f-tab {
+    flex: 1; padding: 5px 4px; font-size: 9px; text-align: center;
+    cursor: pointer; color: var(--dim); letter-spacing: 1px;
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .f-tab.active { color: var(--green); border-color: var(--green); }
+  .f-empty { font-size: 9px; color: var(--dim); text-align: center; padding: 8px 0; letter-spacing: 1px; }
+  .f-section-label {
+    font-size: 8px; color: var(--dim); letter-spacing: 2px;
+    padding: 4px 0 3px; text-transform: uppercase;
+  }
+  /* Toast notification */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: #020d05; border: 1px solid var(--green);
+    color: var(--green); font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; padding: 8px 18px; border-radius: 2px;
+    letter-spacing: 1px; pointer-events: none;
+    opacity: 0; transition: opacity 0.3s;
+    z-index: 999; box-shadow: 0 0 20px rgba(0,255,136,0.2);
+  }
+  #toast.show { opacity: 1; }
+  #toast.error { border-color: var(--red); color: var(--red); box-shadow: 0 0 20px rgba(255,51,68,0.2); }
+
+  /* Iron Dome badge */
+  .iron-dome-badge {
+    font-size: 8px; background: rgba(0,255,221,0.08);
+    border: 1px solid rgba(0,255,221,0.3); color: var(--cyan);
+    padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  /* Aegis Fortress badge */
+  .aegis-badge {
+    font-size: 8px; background: rgba(255,238,0,0.08);
+    border: 1px solid rgba(255,238,0,0.4); color: var(--yellow);
+    padding: 1px 5px; border-radius: 2px; letter-spacing: 1px;
+    flex-shrink: 0; animation: aegis-pulse 2s ease-in-out infinite;
+  }
+  @keyframes aegis-pulse {
+    0%, 100% { box-shadow: 0 0 4px rgba(255,238,0,0.2); }
+    50% { box-shadow: 0 0 10px rgba(255,238,0,0.5); border-color: var(--yellow); }
+  }
+</style>
 </head>
 <body>
 
-    <!-- Donate Button -->
-    <div style="text-align: center; margin-top: 50px;">
-        <h2>Support Global Green Initiative</h2>
-        <p>Click the button below to donate via UPI.</p>
-        <a href="upi://pay?pa=aryanantal2301@okhdfcbank&pn=Global Green Initiative&cu=INR" 
-           style="background-color: #28a745; color: white; padding: 15px 25px; text-decoration: none; border-radius: 5px; font-size: 20px;">
-            Donate via UPI
-        </a>
+<div id="toast"></div>
+
+<div id="header">
+  <h1>◈ BATTLEFIELD SIM</h1>
+  <div class="hstat">THREATS <span id="h-threats">0</span></div>
+  <div class="hstat">INTERCEPTED <span id="h-intercept">0</span></div>
+  <div class="hstat">IMPACTS <span id="h-impacts">0</span></div>
+  <div class="hstat">BASE <span id="h-base">1000</span>HP</div>
+  <div id="clock">T+0.0s</div>
+</div>
+
+<!-- BOT MODE HUD BAR (hidden until bot starts) -->
+<div id="bot-mode-bar"></div>
+
+<div id="main">
+  <div id="left-panel">
+    <!-- MAP & VISUAL SETTINGS -->
+    <div class="panel-section">
+      <div class="panel-title">◈ MAP & VISUALS</div>
+      <div id="map-upload-zone" title="Click or drag an image to use as battlefield map">
+        <span class="uico">🗺</span>
+        <span>UPLOAD MAP IMAGE</span>
+      </div>
+      <input type="file" id="map-file-input" accept="image/*">
+      <div class="map-ctrl-row">
+        <button class="map-mini-btn" id="btn-nv" title="Toggle night-vision overlay">◉ NIGHT VIS</button>
+        <button class="map-mini-btn" id="btn-place-base" title="Click map to reposition base">◎ PLACE BASE</button>
+      </div>
+      <div class="map-ctrl-row">
+        <button class="map-mini-btn" id="btn-map-opacity-up" title="Increase map opacity">▲ OPACITY</button>
+        <button class="map-mini-btn" id="btn-map-opacity-dn" title="Decrease map opacity">▼ OPACITY</button>
+        <button class="map-mini-btn danger" id="btn-clear-map" title="Remove map">✕ MAP</button>
+      </div>
     </div>
 
+    <div class="panel-section">
+      <div class="panel-title">◈ OFFENSE MODE</div>
+      <div id="mode-label">SELECT WEAPON · CLICK MAP</div>
+      <div id="attack-buttons"></div>
+      <div class="panel-title" style="margin-top:8px;">COUNT</div>
+      <div class="count-sel" id="count-sel"></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">◈ DEFENSE PLACEMENT</div>
+      <button id="btn-hide-defense" title="Hide your defenses — enemies must use recon drones to find them">◉ HIDE DEFENSES</button>
+      <div id="defense-buttons"></div>
+    </div>
+
+    <div id="base-hp-wrap">
+      <div id="base-hp-label">BASE INTEGRITY</div>
+      <div id="base-hp-bar-outer"><div id="base-hp-bar" style="width:100%"></div></div>
+      <div id="base-hp-val">1000 / 1000 HP</div>
+      <!-- HP Customize -->
+      <div style="margin-top:8px;">
+        <div class="panel-title" style="margin-bottom:5px;">◈ CUSTOMIZE HP</div>
+        <div class="hp-row">
+          <label>MAX HP</label>
+          <input class="hp-input" id="hp-input" type="number" value="1000" min="100" max="99999" step="100">
+          <button class="hp-set-btn" id="hp-set-btn">SET</button>
+        </div>
+        <div class="hp-presets">
+          <button class="hp-pre" data-hp="500">500</button>
+          <button class="hp-pre" data-hp="1000">1K</button>
+          <button class="hp-pre" data-hp="2500">2.5K</button>
+          <button class="hp-pre" data-hp="5000">5K</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="kill-log">
+      <div id="kill-log-title">◈ BATTLE LOG</div>
+      <div id="log-entries"></div>
+    </div>
+
+    <div id="bottom-controls">
+      <!-- BOT PANEL -->
+      <div id="bot-panel">
+        <div class="panel-title" style="margin-bottom:6px;">◈ VS BOT — AI DEFENSE</div>
+        <div id="bot-difficulty-sel">
+          <button class="diff-btn sel" data-diff="normal">NORMAL</button>
+          <button class="diff-btn hard" data-diff="hard">HARD</button>
+          <button class="diff-btn elite" data-diff="elite">ELITE</button>
+        </div>
+        <button id="btn-start-bot">⚔ START VS BOT</button>
+        <button id="btn-stop-bot">◻ END BATTLE</button>
+        <div class="bot-thought-log" id="bot-thought-log"></div>
+      </div>
+
+      <!-- NORMAL CONTROLS -->
+      <div id="normal-controls">
+        <button class="ctrl-btn" id="btn-vs-bot" style="background:rgba(255,51,68,0.06);border:1px solid rgba(255,51,68,0.25);color:var(--red);width:100%;margin-bottom:4px;font-size:10px;letter-spacing:1px;cursor:pointer;padding:7px;font-family:'Share Tech Mono',monospace;border-radius:2px;">⚔ PLAY VS BOT</button>
+        <button class="ctrl-btn" id="btn-pause">⏸ PAUSE</button>
+        <button class="ctrl-btn" id="btn-clear">✕ CLEAR FIELD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CANVAS -->
+  <div id="canvas-wrap">
+    <!-- Map background image (behind canvas) -->
+    <img id="map-bg" alt="map">
+    <canvas id="main-canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <!-- Fog of War canvas (above game, below NV) -->
+    <canvas id="fow-canvas"></canvas>
+    <!-- Night-vision scanline overlay canvas -->
+    <canvas id="nv-overlay"></canvas>
+    <!-- FOW status indicator -->
+    <div id="fow-status">◈ FOG OF WAR ACTIVE — DEPLOY RECON</div>
+    <!-- Place-base instruction badge -->
+    <div id="place-base-badge">◎ CLICK TO PLACE BASE</div>
+    <div id="instructions">
+      <div class="big">AWAITING ORDERS</div>
+      <div class="sub">SELECT WEAPON · CLICK MAP TO DEPLOY</div>
+      <div class="hint">Or place defense systems to protect the base</div>
+    </div>
+    <div id="place-mode-badge">PLACEMENT MODE — CLICK TO POSITION</div>
+
+    <!-- TARGET SELECTION POPUP -->
+    <div id="target-popup">
+      <div id="target-popup-title">⊕ SELECT TARGET</div>
+      <div id="target-popup-subtitle">CHOOSE STRIKE OBJECTIVE</div>
+      <div id="target-popup-options"></div>
+      <div id="target-popup-cancel">✕ CANCEL</div>
+    </div>
+
+    <!-- OUTCOME BANNER -->
+    <div id="outcome-banner">
+      <div id="outcome-title">VICTORY</div>
+      <div id="outcome-sub">BASE DEFENDED</div>
+      <div id="outcome-stats"></div>
+      <button id="btn-outcome-ok">CONTINUE</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div class="panel-section">
+      <div class="panel-title">◈ STATISTICS</div>
+      <div class="stat-row"><span class="label">Launched</span><span class="val" id="s-launched">0</span></div>
+      <div class="stat-row"><span class="label">Destroyed</span><span class="val" id="s-destroyed">0</span></div>
+      <div class="stat-row"><span class="label">Jammed</span><span class="val" id="s-jammed">0</span></div>
+      <div class="stat-row"><span class="label">Spoofed</span><span class="val" id="s-spoofed">0</span></div>
+      <div class="stat-row"><span class="label">Hit Base</span><span class="val" id="s-hit">0</span></div>
+      <div class="stat-row"><span class="label">Intercept%</span><span class="val" id="s-rate">0%</span></div>
+      <div class="stat-row"><span class="label">Dmg Dealt</span><span class="val" id="s-dmg">0</span></div>
+      <div class="stat-row"><span class="label">Interceptors</span><span class="val" id="s-int-count">0</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">◈ ACTIVE UNITS</div>
+    </div>
+    <div id="units-list"></div>
+
+    <!-- DEFENSE FORMATIONS -->
+    <div class="panel-section" style="flex-shrink:0;">
+      <div class="panel-title">◈ DEFENSE FORMATIONS</div>
+      <div class="f-tabs">
+        <div class="f-tab active" id="df-tab-preset" onclick="switchFormTab('defense','preset')">PRESETS</div>
+        <div class="f-tab" id="df-tab-saved" onclick="switchFormTab('defense','saved')">SAVED</div>
+      </div>
+      <div id="df-preset-list"></div>
+      <div id="df-saved-list"></div>
+      <div class="f-save-row">
+        <input class="f-save-input" id="df-save-name" placeholder="Formation name…" maxlength="24">
+        <button class="f-save-btn" id="df-save-btn">SAVE</button>
+      </div>
+    </div>
+
+    <!-- ATTACK FORMATIONS -->
+    <div class="panel-section" style="flex-shrink:0;">
+      <div class="panel-title">◈ ATTACK FORMATIONS</div>
+      <div class="f-tabs">
+        <div class="f-tab active" id="af-tab-preset" onclick="switchFormTab('attack','preset')">PRESETS</div>
+        <div class="f-tab" id="af-tab-saved" onclick="switchFormTab('attack','saved')">SAVED</div>
+      </div>
+      <div id="af-preset-list"></div>
+      <div id="af-saved-list"></div>
+      <div class="f-save-row">
+        <input class="f-save-input" id="af-save-name" placeholder="Formation name…" maxlength="24">
+        <button class="f-save-btn" id="af-save-btn">SAVE</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  BATTLEFIELD SIMULATION ENGINE — Real-Time Canvas
+// ══════════════════════════════════════════════════════════════
+
+const canvas  = document.getElementById('main-canvas');
+const ctx     = canvas.getContext('2d');
+const overlay = document.getElementById('overlay-canvas');
+const octx    = overlay.getContext('2d');
+const wrap    = document.getElementById('canvas-wrap');
+
+// ── CONFIG ───────────────────────────────────────────────────
+const CFG = {
+  BASE_HP: 1000,
+  FPS: 60,
+  GRID_SIZE: 40,
+  TRAIL_LEN: 60,
+  EXPLOSION_FRAMES: 25,
+  INTERCEPT_RANGE: 80,   // pixels, how close interceptor must get to destroy
+};
+
+// ── Resize canvas to fill container ──────────────────────────
+function resizeCanvas() {
+  const rect = wrap.getBoundingClientRect();
+  canvas.width  = overlay.width  = rect.width;
+  canvas.height = overlay.height = rect.height;
+  // Resize FOW canvas too
+  if (fowCanvas) { fowCanvas.width = rect.width; fowCanvas.height = rect.height; }
+  drawGrid();
+}
+window.addEventListener('resize', resizeCanvas);
+
+// ── STATE ────────────────────────────────────────────────────
+let state = {
+  paused: false,
+  time: 0,
+  baseHP: CFG.BASE_HP,
+  entities: [],
+  explosions: [],
+  particles: [],
+  stats: { launched:0, destroyed:0, jammed:0, spoofed:0, hit:0, dmg:0, interceptors:0 },
+  selectedAttack: null,
+  selectedCount: 1,
+  selectedDefense: null,
+  placingDefense: false,
+  defenseStructures: [],
+  idCounter: 0,
+  gridOffset: 0,
+};
+
+// ── ENTITY TYPES ─────────────────────────────────────────────
+const THREATS = {
+  swarm_drone: {
+    label: 'Swarm Drone',   color: '#ffcc00', size: 6,
+    speed: 1.2, damage: 12, stealth: 0.3, hp: 1,
+    jamRes: 0.1, shape: 'square',
+    desc: '×10 small fast units',
+  },
+  attack_drone: {
+    label: 'Attack Drone',  color: '#ff8800', size: 8,
+    speed: 1.6, damage: 40, stealth: 0.4, hp: 2,
+    jamRes: 0.3, shape: 'square',
+    desc: 'Medium damage drone',
+  },
+  loitering: {
+    label: 'Loitering Mun', color: '#ff6622', size: 7,
+    speed: 0.9, damage: 80, stealth: 0.7, hp: 1,
+    jamRes: 0.5, shape: 'diamond',
+    desc: 'Stealthy suicide drone',
+  },
+  cruise_missile: {
+    label: 'Cruise Missile', color: '#ff3344', size: 9,
+    speed: 4.5, damage: 200, stealth: 0.5, hp: 3,
+    jamRes: 0.7, shape: 'arrow',
+    desc: 'Fast, high damage',
+  },
+  ballistic: {
+    label: 'Ballistic MSLE', color: '#ff0066', size: 11,
+    speed: 9.0, damage: 500, stealth: 0.2, hp: 5,
+    jamRes: 0.9, shape: 'triangle',
+    desc: 'Devastating, fast',
+  },
+  recon_drone: {
+    label: 'Recon Drone',   color: '#ccff00', size: 5,
+    speed: 1.8, damage: 0, stealth: 0.8, hp: 1,
+    jamRes: 0.2, shape: 'circle',
+    desc: 'No damage, reveals',
+  },
+};
+
+const DEFENSES = {
+  short_sam: {
+    label: 'Short SAM',     color: '#00aaff', range: 120,
+    fireRate: 90, ammo: 10, hitProb: 0.75,
+    interceptSpeed: 5, shape: 'square',
+    desc: 'Range 120px, 75% hit',
+  },
+  medium_sam: {
+    label: 'Medium SAM',    color: '#0066ff', range: 200,
+    fireRate: 150, ammo: 6, hitProb: 0.65,
+    interceptSpeed: 6, shape: 'square',
+    desc: 'Range 200px, 65% hit',
+  },
+  laser_hel: {
+    label: 'Laser (HEL)',   color: '#00ffdd', range: 80,
+    fireRate: 20, ammo: 999, hitProb: 0.92,
+    interceptSpeed: 99, shape: 'octagon',
+    desc: 'Unlimited, 92% hit',
+  },
+  ciws: {
+    label: 'CIWS',          color: '#44ddff', range: 60,
+    fireRate: 15, ammo: 999, hitProb: 0.88,
+    interceptSpeed: 8, shape: 'square',
+    desc: 'Close-in, rapid fire',
+  },
+  ew_jammer: {
+    label: 'EW Jammer',     color: '#cc44ff', range: 160,
+    fireRate: 60, ammo: 999, hitProb: 0.55,
+    interceptSpeed: 0, shape: 'circle',
+    desc: 'Jams/spoofs drones',
+  },
+  drone_interceptor: {
+    label: 'Drone Intercept', color: '#00ff88', range: 140,
+    fireRate: 100, ammo: 8, hitProb: 0.72,
+    interceptSpeed: 4, shape: 'diamond',
+    desc: 'Drone-vs-drone',
+  },
+};
+
+// ── GRID ─────────────────────────────────────────────────────
+function drawGrid() {
+  octx.clearRect(0, 0, overlay.width, overlay.height);
+  octx.strokeStyle = 'rgba(0,80,30,0.25)';
+  octx.lineWidth = 0.5;
+  const g = CFG.GRID_SIZE;
+  for (let x = 0; x < overlay.width; x += g) {
+    octx.beginPath(); octx.moveTo(x, 0); octx.lineTo(x, overlay.height); octx.stroke();
+  }
+  for (let y = 0; y < overlay.height; y += g) {
+    octx.beginPath(); octx.moveTo(0, y); octx.lineTo(overlay.width, y); octx.stroke();
+  }
+  // Subtle scan-line
+  const scanGrad = octx.createLinearGradient(0,0,0,overlay.height);
+  scanGrad.addColorStop(0,'transparent');
+  scanGrad.addColorStop(0.5,'rgba(0,255,80,0.015)');
+  scanGrad.addColorStop(1,'transparent');
+  octx.fillStyle = scanGrad;
+  octx.fillRect(0,0,overlay.width,overlay.height);
+}
+
+// ── BASE ─────────────────────────────────────────────────────
+function getBasePos() {
+  return { x: canvas.width / 2, y: canvas.height / 2 };
+}
+
+function drawBase() {
+  const bp = getBasePos();
+  const pct = state.baseHP / CFG.BASE_HP;
+  const col = pct > 0.6 ? '#00ff88' : pct > 0.3 ? '#ff8800' : '#ff3344';
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(bp.x, bp.y, 28, 0, Math.PI*2);
+  ctx.strokeStyle = col + '55';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Range rings for defenses
+  ctx.beginPath();
+  ctx.arc(bp.x, bp.y, 26, 0, Math.PI*2);
+  ctx.fillStyle = '#000b04';
+  ctx.fill();
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Inner square
+  ctx.fillStyle = col + '33';
+  ctx.fillRect(bp.x-12, bp.y-12, 24, 24);
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(bp.x-12, bp.y-12, 24, 24);
+
+  // Label
+  ctx.fillStyle = col;
+  ctx.font = 'bold 8px "Share Tech Mono"';
+  ctx.textAlign = 'center';
+  ctx.fillText('BASE', bp.x, bp.y + 3);
+  ctx.fillText(state.baseHP + 'HP', bp.x, bp.y + 40);
+}
+
+// ── ENTITY CLASS ─────────────────────────────────────────────
+class Entity {
+  constructor(type, x, y, tx, ty, isIntercept = false, targetId = null) {
+    this.id        = ++state.idCounter;
+    this.type      = type;
+    this.x = this.spawnX = x;
+    this.y = this.spawnY = y;
+    this.tx = tx; this.ty = ty;
+    this.isIntercept = isIntercept;
+    this.targetId  = targetId;
+    this.status    = 'active'; // active | destroyed | jammed | spoofed | hit
+    this.trail     = [];
+    this.frame     = 0;
+
+    if (isIntercept) {
+      this.cfg = { color:'#00ccff', size:5, speed:6, shape:'circle', hp:99 };
+      this.label = 'INTERCEPTOR';
+    } else {
+      this.cfg = { ...THREATS[type] };
+      this.label = THREATS[type].label;
+    }
+    this.hp = this.cfg.hp || 1;
+  }
+
+  get dx() { return this.tx - this.x; }
+  get dy() { return this.ty - this.y; }
+  get dist() { return Math.hypot(this.dx, this.dy); }
+  get angle() { return Math.atan2(this.dy, this.dx); }
+  get progress() {
+    const total = Math.hypot(this.tx - this.spawnX, this.ty - this.spawnY);
+    const done  = Math.hypot(this.x - this.spawnX, this.y - this.spawnY);
+    return total > 0 ? Math.min(1, done / total) : 1;
+  }
+
+  update() {
+    if (this.status !== 'active') return;
+    this.frame++;
+
+    // Move
+    if (this.dist > this.cfg.speed) {
+      this.x += (this.dx / this.dist) * this.cfg.speed;
+      this.y += (this.dy / this.dist) * this.cfg.speed;
+    } else {
+      this.x = this.tx; this.y = this.ty;
+      if (!this.isIntercept) this.onHitBase();
+      else this.status = 'expired';
+    }
+
+    // Trail
+    this.trail.push({ x: this.x, y: this.y });
+    if (this.trail.length > CFG.TRAIL_LEN) this.trail.shift();
+  }
+
+  onHitBase() {
+    // Check if this entity was targeting a defense structure
+    const hitTarget = this.customTarget;
+    let hitDefense = null;
+    if (hitTarget) {
+      hitDefense = state.defenseStructures.find(d =>
+        d.active && Math.hypot(d.x - hitTarget.x, d.y - hitTarget.y) < 15
+      );
+    }
+
+    if (hitDefense) {
+      // Hit a defense structure
+      hitDefense.active = false;
+      hitDefense.ammo   = 0;
+      spawnExplosion(hitDefense.x, hitDefense.y, hitDefense.cfg.color, 'medium');
+      addLog(`IMPACT: ${this.label} DESTROYED ${hitDefense.label}!`, 'hit');
+      state.stats.hit++;
+      state.stats.dmg += this.cfg.damage;
+    } else if (this.cfg.damage > 0) {
+      // Hit the base
+      state.baseHP = Math.max(0, state.baseHP - this.cfg.damage);
+      state.stats.hit++;
+      state.stats.dmg += this.cfg.damage;
+      addLog(`IMPACT: ${this.label} hit base -${this.cfg.damage}HP`, 'hit');
+    }
+    spawnExplosion(this.x, this.y, this.cfg.color, this.cfg.damage > 100 ? 'large' : 'small');
+    this.status = 'hit';
+  }
+
+  destroy(cause = 'destroyed') {
+    this.status = cause;
+    spawnExplosion(this.x, this.y, this.cfg.color, 'small');
+    if (!this.isIntercept) {
+      if (cause === 'destroyed') state.stats.destroyed++;
+      else if (cause === 'jammed') state.stats.jammed++;
+      else if (cause === 'spoofed') state.stats.spoofed++;
+    }
+  }
+
+  draw() {
+    if (this.status !== 'active') return;
+    const { x, y, cfg, angle, trail } = this;
+    const s = cfg.size;
+
+    // Trail
+    if (trail.length > 1) {
+      for (let i = 1; i < trail.length; i++) {
+        const alpha = (i / trail.length) * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(trail[i-1].x, trail[i-1].y);
+        ctx.lineTo(trail[i].x, trail[i].y);
+        ctx.strokeStyle = cfg.color + Math.floor(alpha * 255).toString(16).padStart(2,'0');
+        ctx.lineWidth = this.isIntercept ? 1 : Math.max(1, s * 0.3);
+        ctx.stroke();
+      }
+    }
+
+    // Glow
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, s * 2.5);
+    glow.addColorStop(0, cfg.color + '44');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(x, y, s * 2.5, 0, Math.PI*2); ctx.fill();
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle + Math.PI/2);
+
+    ctx.fillStyle = cfg.color;
+    ctx.strokeStyle = '#ffffff33';
+    ctx.lineWidth = 0.5;
+
+    const sh = cfg.shape;
+    if (sh === 'square') {
+      ctx.fillRect(-s/2, -s/2, s, s);
+      ctx.strokeRect(-s/2, -s/2, s, s);
+    } else if (sh === 'diamond') {
+      ctx.beginPath();
+      ctx.moveTo(0, -s); ctx.lineTo(s*0.7, 0);
+      ctx.lineTo(0, s);  ctx.lineTo(-s*0.7, 0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (sh === 'triangle' || sh === 'arrow') {
+      ctx.beginPath();
+      ctx.moveTo(0, -s); ctx.lineTo(s*0.7, s); ctx.lineTo(-s*0.7, s);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (sh === 'circle') {
+      ctx.beginPath(); ctx.arc(0, 0, s/2, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillRect(-s/2, -s/2, s, s);
+    }
+
+    // Direction tick
+    ctx.fillStyle = '#ffffff88';
+    ctx.fillRect(-1, -s/2 - 3, 2, 3);
+
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = cfg.color + 'cc';
+    ctx.font = '8px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    const shortName = this.isIntercept ? '✦' : this.label.substring(0,4).toUpperCase();
+    ctx.fillText(shortName, x, y - s - 4);
+  }
+}
+
+// ── DEFENSE STRUCTURE ────────────────────────────────────────
+class DefenseStructure {
+  constructor(type, x, y) {
+    this.id     = ++state.idCounter;
+    this.type   = type;
+    this.cfg    = DEFENSES[type];
+    this.x = x; this.y = y;
+    this.cooldown = 0;
+    this.ammo   = this.cfg.ammo;
+    this.active = true;
+    this.label  = this.cfg.label;
+    this.pulseFrame = 0;
+    this.totalInterceptions = 0;
+  }
+
+  update() {
+    if (!this.active) return;
+    if (this.cooldown > 0) { this.cooldown--; return; }
+    if (this.ammo <= 0 && this.cfg.ammo < 999) return;
+    this.pulseFrame++;
+
+    // Find targets in range
+    const threats = state.entities.filter(e =>
+      e.status === 'active' && !e.isIntercept &&
+      Math.hypot(e.x - this.x, e.y - this.y) <= this.cfg.range
+    );
+    if (threats.length === 0) return;
+
+    // Pick closest
+    threats.sort((a,b) =>
+      Math.hypot(a.x-this.x,a.y-this.y) - Math.hypot(b.x-this.x,b.y-this.y)
+    );
+    const target = threats[0];
+
+    if (this.cfg.type === 'ew' || this.type === 'ew_jammer') {
+      this.fireEW(target);
+    } else {
+      this.fireMissile(target);
+    }
+    this.cooldown = this.cfg.fireRate;
+    if (this.cfg.ammo < 999) this.ammo--;
+  }
+
+  fireEW(target) {
+    const jamRes = THREATS[target.type]?.jamRes || 0.3;
+    const hitP   = this.cfg.hitProb * (1 - jamRes * 0.7);
+    if (Math.random() < hitP) {
+      if (Math.random() < 0.5) {
+        target.destroy('jammed');
+        addLog(`${this.label}: JAMMED ${target.label}`, 'jam');
+      } else {
+        // Spoof: redirect
+        target.tx = Math.random() * canvas.width;
+        target.ty = Math.random() * canvas.height;
+        target.destroy('spoofed');
+        addLog(`${this.label}: SPOOFED ${target.label}`, 'jam');
+      }
+      this.totalInterceptions++;
+      state.stats.interceptors++;
+    }
+    // EW arc
+    spawnEWArc(this.x, this.y, target.x, target.y, this.cfg.color);
+  }
+
+  fireMissile(target) {
+    const interceptor = new Entity(null, this.x, this.y, target.x, target.y, true, target.id);
+    interceptor.cfg.speed = this.cfg.interceptSpeed;
+    interceptor.cfg.color = this.cfg.color;
+    interceptor.targetRef = target;
+    interceptor.hitProb   = this.cfg.hitProb;
+    interceptor.defenseRef = this;
+    state.entities.push(interceptor);
+    state.stats.interceptors++;
+    addLog(`${this.label} fired at ${target.label} #${target.id}`, 'info');
+  }
+
+  draw() {
+    const { x, y, cfg, active, ammo } = this;
+
+    // Draw destroyed wreck
+    if (!active) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = '#ff3344';
+      ctx.font = '10px "Share Tech Mono"';
+      ctx.textAlign = 'center';
+      ctx.fillText('✕', x, y + 4);
+      ctx.fillStyle = '#ff334444';
+      ctx.font = '7px "Share Tech Mono"';
+      ctx.fillText('DESTROYED', x, y + 14);
+      ctx.globalAlpha = 1;
+      ctx.restore();
+      return;
+    }
+
+    const t = this.pulseFrame;
+    const pulse = Math.sin(t * 0.05) * 0.5 + 0.5;
+
+    // ── RANGE CIRCLE: filled dim area + animated border ──
+    // Filled background (very subtle, so it's visible but not distracting)
+    ctx.beginPath();
+    ctx.arc(x, y, cfg.range, 0, Math.PI*2);
+    const rangeGrad = ctx.createRadialGradient(x, y, cfg.range*0.5, x, y, cfg.range);
+    rangeGrad.addColorStop(0, cfg.color + '00');
+    rangeGrad.addColorStop(1, cfg.color + '0e');
+    ctx.fillStyle = rangeGrad;
+    ctx.fill();
+
+    // Dashed border with pulse
+    ctx.beginPath();
+    ctx.arc(x, y, cfg.range, 0, Math.PI*2);
+    const borderAlpha = Math.floor(30 + pulse * 40).toString(16).padStart(2,'0');
+    ctx.strokeStyle = cfg.color + borderAlpha;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 7]);
+    ctx.lineDashOffset = -t * 0.5; // animated marching ants
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.lineDashOffset = 0;
+
+    // Range label at edge
+    ctx.save();
+    ctx.fillStyle = cfg.color + '55';
+    ctx.font = '7px "Share Tech Mono"';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${cfg.range}px`, x + cfg.range + 3, y + 3);
+    ctx.restore();
+
+    // Body
+    ctx.save();
+    ctx.translate(x, y);
+    const s = 9;
+
+    // Glow
+    const gl = ctx.createRadialGradient(0,0,0,0,0,s*3);
+    gl.addColorStop(0, cfg.color + '55');
+    gl.addColorStop(1, 'transparent');
+    ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(0,0,s*3,0,Math.PI*2); ctx.fill();
+
+    ctx.fillStyle = cfg.color + 'cc';
+    ctx.strokeStyle = cfg.color;
+    ctx.lineWidth = 1.5;
+
+    if (cfg.shape === 'square') {
+      ctx.fillRect(-s/2,-s/2,s,s); ctx.strokeRect(-s/2,-s/2,s,s);
+    } else if (cfg.shape === 'circle') {
+      ctx.beginPath(); ctx.arc(0,0,s/2,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    } else if (cfg.shape === 'octagon') {
+      ctx.beginPath();
+      for (let i=0;i<8;i++) {
+        const a = (i/8)*Math.PI*2 - Math.PI/8;
+        i===0 ? ctx.moveTo(Math.cos(a)*s/2,Math.sin(a)*s/2)
+              : ctx.lineTo(Math.cos(a)*s/2,Math.sin(a)*s/2);
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else if (cfg.shape === 'diamond') {
+      ctx.beginPath();
+      ctx.moveTo(0,-s); ctx.lineTo(s*0.7,0); ctx.lineTo(0,s); ctx.lineTo(-s*0.7,0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    } else {
+      ctx.fillRect(-s/2,-s/2,s,s); ctx.strokeRect(-s/2,-s/2,s,s);
+    }
+
+    // Active firing indicator
+    if (this.cooldown > 0) {
+      const reload = 1 - (this.cooldown / cfg.fireRate);
+      ctx.beginPath();
+      ctx.arc(0, 0, s + 4, -Math.PI/2, -Math.PI/2 + reload * Math.PI*2);
+      ctx.strokeStyle = cfg.color + 'aa';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // Label
+    ctx.fillStyle = cfg.color;
+    ctx.font = '8px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText(this.label.substring(0,8).toUpperCase(), x, y - 15);
+
+    // Ammo dots
+    if (cfg.ammo < 999) {
+      const maxDots = Math.min(cfg.ammo, 12);
+      const dots = Math.min(ammo, maxDots);
+      for (let i = 0; i < maxDots; i++) {
+        ctx.fillStyle = i < dots ? cfg.color : '#1a2a1a';
+        ctx.fillRect(x - maxDots*3 + i*6, y + 13, 4, 3);
+      }
+    }
+  }
+}
+
+// ── INTERCEPTOR UPDATE (tracks moving targets) ────────────────
+function updateInterceptors() {
+  state.entities.filter(e => e.isIntercept && e.status === 'active').forEach(intc => {
+    if (intc.targetRef && intc.targetRef.status === 'active') {
+      // Track the target
+      intc.tx = intc.targetRef.x;
+      intc.ty = intc.targetRef.y;
+
+      // Close enough?
+      if (intc.dist < CFG.INTERCEPT_RANGE * 0.4) {
+        const hitP = intc.hitProb || 0.75;
+        const jamRes = intc.targetRef?.cfg?.jamRes || 0;
+        const finalP = hitP * (1 - jamRes * 0.3);
+        if (Math.random() < finalP) {
+          const victim = intc.targetRef;
+          victim.destroy('destroyed');
+          addLog(`✓ ${intc.defenseRef?.label||'SAM'} HIT ${victim.label}`, 'kill');
+          spawnExplosion(victim.x, victim.y, victim.cfg.color, 'medium');
+        }
+        intc.status = 'expired';
+        if (intc.defenseRef) intc.defenseRef.totalInterceptions++;
+      }
+    } else {
+      // Target gone, interceptor expires
+      intc.status = 'expired';
+    }
+  });
+}
+
+// ── EXPLOSIONS ───────────────────────────────────────────────
+function spawnExplosion(x, y, color, size = 'small') {
+  const count = size === 'large' ? 30 : size === 'medium' ? 18 : 10;
+  const speed = size === 'large' ? 4  : size === 'medium' ? 2.5 : 1.5;
+  state.explosions.push({ x, y, color, frame: 0, maxFrame: CFG.EXPLOSION_FRAMES, size });
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const v = Math.random() * speed + 0.5;
+    state.particles.push({
+      x, y, color,
+      vx: Math.cos(a)*v, vy: Math.sin(a)*v,
+      life: 1, decay: 0.03 + Math.random()*0.04,
+      size: Math.random()*3 + 1,
+    });
+  }
+}
+
+function spawnEWArc(x1, y1, x2, y2, color) {
+  state.explosions.push({ type:'ew', x1, y1, x2, y2, color, frame:0, maxFrame: 12 });
+}
+
+function drawExplosions() {
+  state.explosions = state.explosions.filter(e => e.frame < e.maxFrame);
+  for (const ex of state.explosions) {
+    const t = ex.frame / ex.maxFrame;
+    if (ex.type === 'ew') {
+      // EW arc line
+      ctx.beginPath();
+      ctx.moveTo(ex.x1, ex.y1);
+      // wavy line
+      const mx = (ex.x1+ex.x2)/2 + (Math.random()-0.5)*40;
+      const my = (ex.y1+ex.y2)/2 + (Math.random()-0.5)*40;
+      ctx.quadraticCurveTo(mx, my, ex.x2, ex.y2);
+      ctx.strokeStyle = ex.color + Math.floor((1-t)*200).toString(16).padStart(2,'0');
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else {
+      const r = (ex.size === 'large' ? 60 : ex.size === 'medium' ? 35 : 20) * t;
+      const alpha = Math.floor((1-t) * 180).toString(16).padStart(2,'0');
+      ctx.beginPath();
+      ctx.arc(ex.x, ex.y, r * 0.6, 0, Math.PI*2);
+      ctx.fillStyle = ex.color + alpha;
+      ctx.fill();
+      // Ring
+      ctx.beginPath();
+      ctx.arc(ex.x, ex.y, r, 0, Math.PI*2);
+      ctx.strokeStyle = '#ffffff' + alpha;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+    ex.frame++;
+  }
+
+  // Particles
+  state.particles = state.particles.filter(p => p.life > 0);
+  for (const p of state.particles) {
+    p.x += p.vx; p.y += p.vy;
+    p.vy += 0.04;
+    p.life -= p.decay;
+    const a = Math.floor(p.life * 200).toString(16).padStart(2,'0');
+    ctx.fillStyle = p.color + a;
+    ctx.fillRect(p.x - p.size/2, p.y - p.size/2, p.size, p.size);
+  }
+}
+
+// ── SPAWN THREAT ──────────────────────────────────────────────
+// spawnFrom: click position {x,y}
+// target: {x, y, label} — where the threats will fly toward
+function spawnThreat(type, count, fromX, fromY, targetX, targetY) {
+  for (let i = 0; i < count; i++) {
+    const spread = count > 1 ? 22 : 0;
+    const sx = fromX + (Math.random()-0.5)*spread*2;
+    const sy = fromY + (Math.random()-0.5)*spread*2;
+    // Small scatter around chosen target
+    const tx = targetX + (Math.random()-0.5)*18;
+    const ty = targetY + (Math.random()-0.5)*18;
+    const e = new Entity(type, sx, sy, tx, ty);
+    // Store original target for "hit target" logic
+    e.customTarget = { x: targetX, y: targetY };
+    state.entities.push(e);
+    state.stats.launched++;
+  }
+  addLog(`⚠ ${count}× ${THREATS[type].label} launched`, 'info');
+  document.getElementById('instructions').style.opacity = '0';
+}
+
+// ── TARGET POPUP ──────────────────────────────────────────────
+let pendingAttack = null; // { type, count, fromX, fromY, clientX, clientY }
+
+function showTargetPopup(type, count, fromX, fromY, clientX, clientY) {
+  pendingAttack = { type, count, fromX, fromY };
+
+  const popup = document.getElementById('target-popup');
+  const opts  = document.getElementById('target-popup-options');
+  const bp    = getBasePos();
+  const wrapRect = wrap.getBoundingClientRect();
+
+  opts.innerHTML = '';
+
+  // Build target list: BASE first, then all defense structures
+  const targets = [];
+
+  // Always add BASE
+  targets.push({
+    label: '◈ BASE HQ',
+    sublabel: `${state.baseHP}HP`,
+    color: '#00ff88',
+    x: bp.x, y: bp.y,
+    shape: 'square',
+    priority: 'HIGH VALUE',
+  });
+
+  // Add each placed defense
+  state.defenseStructures.forEach(ds => {
+    const dist = Math.hypot(ds.x - fromX, ds.y - fromY);
+    targets.push({
+      label: ds.label,
+      sublabel: `${Math.round(dist)}px away`,
+      color: ds.cfg.color,
+      x: ds.x, y: ds.y,
+      shape: ds.cfg.shape,
+      priority: 'DEFENSE',
+    });
+  });
+
+  // Render options
+  targets.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'target-opt';
+    const distFromSpawn = Math.round(Math.hypot(t.x - fromX, t.y - fromY));
+    div.innerHTML = `
+      <div class="target-dot" style="background:${t.color};border-radius:${t.shape==='circle'?'50%':'2px'}"></div>
+      <span class="target-name" style="color:${t.color}">${t.label}</span>
+      <span class="target-dist">${distFromSpawn}px</span>
+    `;
+    div.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      // Capture BEFORE hideTargetPopup nulls pendingAttack
+      const atk = pendingAttack;
+      if (!atk) return;
+      hideTargetPopup();
+      spawnThreat(atk.type, atk.count, atk.fromX, atk.fromY, t.x, t.y);
+    });
+    opts.appendChild(div);
+  });
+
+  // Position popup near click, keep inside screen
+  const pw = 220, ph = Math.min(targets.length * 40 + 80, 400);
+  let px = clientX - wrapRect.left + 14;
+  let py = clientY - wrapRect.top  - 20;
+  if (px + pw > wrapRect.width  - 10) px = clientX - wrapRect.left - pw - 14;
+  if (py + ph > wrapRect.height - 10) py = wrapRect.height - ph - 10;
+  if (py < 5) py = 5;
+
+  popup.style.left = px + 'px';
+  popup.style.top  = py + 'px';
+  popup.classList.add('visible');
+
+  // Update title with weapon name
+  document.getElementById('target-popup-title').textContent = `⊕ TARGET: ${THREATS[type].label.toUpperCase()}`;
+  document.getElementById('target-popup-subtitle').textContent =
+    `${count}× UNIT${count>1?'S':''} · SELECT STRIKE OBJECTIVE`;
+}
+
+function hideTargetPopup() {
+  document.getElementById('target-popup').classList.remove('visible');
+  pendingAttack = null;
+}
+
+document.getElementById('target-popup-cancel').addEventListener('click', hideTargetPopup);
+
+// ── LOG ───────────────────────────────────────────────────────
+const MAX_LOGS = 80;
+function addLog(msg, type = 'info') {
+  const el = document.getElementById('log-entries');
+  const div = document.createElement('div');
+  div.className = `log-entry ${type}`;
+  const ts = `T+${state.time.toFixed(1)}`;
+  div.textContent = `${ts} ${msg}`;
+  el.insertBefore(div, el.firstChild);
+  while (el.children.length > MAX_LOGS) el.removeChild(el.lastChild);
+}
+
+// ── UI BUILDERS ───────────────────────────────────────────────
+function buildAttackButtons() {
+  const container = document.getElementById('attack-buttons');
+  Object.entries(THREATS).forEach(([key, cfg]) => {
+    const btn = document.createElement('button');
+    btn.className = 'attack-btn';
+    btn.dataset.key = key;
+    btn.innerHTML = `<span class="dot" style="background:${cfg.color}"></span>${cfg.label}`;
+    btn.title = cfg.desc;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.attack-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      state.selectedAttack = key;
+      state.selectedDefense = null;
+      state.placingDefense = false;
+      document.querySelectorAll('.def-btn').forEach(b => b.classList.remove('active-def'));
+      document.getElementById('mode-label').textContent = `ARMED: ${cfg.label.toUpperCase()}`;
+      document.getElementById('mode-label').style.color = cfg.color;
+      document.getElementById('place-mode-badge').style.display = 'none';
+    });
+    container.appendChild(btn);
+  });
+}
+
+function buildCountSel() {
+  const container = document.getElementById('count-sel');
+  [1,3,5,10,15].forEach(n => {
+    const btn = document.createElement('button');
+    btn.className = 'count-btn' + (n===1?' sel':'');
+    btn.textContent = n;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.count-btn').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      state.selectedCount = n;
+    });
+    container.appendChild(btn);
+  });
+}
+
+function buildDefenseButtons() {
+  const container = document.getElementById('defense-buttons');
+  Object.entries(DEFENSES).forEach(([key, cfg]) => {
+    const btn = document.createElement('button');
+    btn.className = 'def-btn';
+    btn.dataset.key = key;
+    btn.innerHTML = `<span class="dot" style="background:${cfg.color}"></span>${cfg.label}`;
+    btn.title = cfg.desc;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.def-btn').forEach(b => b.classList.remove('active-def'));
+      document.querySelectorAll('.attack-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('active-def');
+      state.selectedDefense = key;
+      state.selectedAttack = null;
+      state.placingDefense = true;
+      document.getElementById('mode-label').textContent = `PLACING: ${cfg.label.toUpperCase()}`;
+      document.getElementById('mode-label').style.color = cfg.color;
+      document.getElementById('place-mode-badge').style.display = 'block';
+      document.getElementById('place-mode-badge').textContent = `PLACEMENT: ${cfg.label} — CLICK TO POSITION`;
+    });
+    container.appendChild(btn);
+  });
+}
+
+// ── CANVAS CLICK ──────────────────────────────────────────────
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+
+  // If popup is open, close it and ignore this click
+  const popup = document.getElementById('target-popup');
+  if (popup.classList.contains('visible')) {
+    hideTargetPopup();
+    return;
+  }
+
+  // Ripple effect
+  const ripple = document.createElement('div');
+  ripple.className = 'click-ring';
+  ripple.style.left = e.clientX - wrap.getBoundingClientRect().left + 'px';
+  ripple.style.top  = e.clientY - wrap.getBoundingClientRect().top  + 'px';
+  wrap.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+
+  if (state.placingDefense && state.selectedDefense) {
+    const ds = new DefenseStructure(state.selectedDefense, mx, my);
+    state.defenseStructures.push(ds);
+    addLog(`Deployed ${DEFENSES[state.selectedDefense].label}`, 'info');
+    document.getElementById('instructions').style.opacity = '0';
+  } else if (state.selectedAttack) {
+    showTargetPopup(state.selectedAttack, state.selectedCount, mx, my, e.clientX, e.clientY);
+  }
+});
+
+// Stop popup clicks from bubbling to canvas
+document.getElementById('target-popup').addEventListener('click', (e) => {
+  e.stopPropagation();
+});
+
+// ── UI UPDATES ────────────────────────────────────────────────
+function updateUI() {
+  const s = state.stats;
+  const hp = state.baseHP;
+  const pct = hp / CFG.BASE_HP;
+
+  // Header
+  const activeThreats = state.entities.filter(e => e.status==='active' && !e.isIntercept).length;
+  document.getElementById('h-threats').textContent   = activeThreats;
+  document.getElementById('h-intercept').textContent = s.destroyed + s.jammed + s.spoofed;
+  document.getElementById('h-impacts').textContent   = s.hit;
+  document.getElementById('h-base').textContent      = hp;
+
+  // Base HP bar
+  const hpCol = pct > 0.6 ? '#00ff88' : pct > 0.3 ? '#ff8800' : '#ff3344';
+  document.getElementById('base-hp-bar').style.width = (pct*100) + '%';
+  document.getElementById('base-hp-bar').style.background = hpCol;
+  document.getElementById('base-hp-val').textContent = `${hp} / ${CFG.BASE_HP} HP`;
+  document.getElementById('base-hp-val').style.color = hpCol;
+
+  // Stats
+  document.getElementById('s-launched').textContent   = s.launched;
+  document.getElementById('s-destroyed').textContent  = s.destroyed;
+  document.getElementById('s-jammed').textContent     = s.jammed;
+  document.getElementById('s-spoofed').textContent    = s.spoofed;
+  document.getElementById('s-hit').textContent        = s.hit;
+  const total = s.destroyed + s.jammed + s.spoofed + s.hit;
+  const rate = total > 0 ? Math.round((s.destroyed+s.jammed+s.spoofed)/total*100) : 0;
+  document.getElementById('s-rate').textContent       = rate + '%';
+  document.getElementById('s-dmg').textContent        = s.dmg;
+  document.getElementById('s-int-count').textContent  = s.interceptors;
+
+  // Active units list
+  const ul = document.getElementById('units-list');
+  ul.innerHTML = '';
+  const actives = state.entities.filter(e => e.status==='active' && !e.isIntercept).slice(0,20);
+  actives.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'unit-row';
+    row.innerHTML = `
+      <div class="unit-dot" style="background:${e.cfg.color}"></div>
+      <div class="unit-name">${e.label}</div>
+      <div class="unit-pct">${Math.round(e.progress*100)}%</div>
+    `;
+    ul.appendChild(row);
+  });
+  const interceptors = state.entities.filter(e => e.status==='active' && e.isIntercept).slice(0,10);
+  interceptors.forEach(e => {
+    const row = document.createElement('div');
+    row.className = 'unit-row';
+    row.innerHTML = `
+      <div class="unit-dot" style="background:#00ccff"></div>
+      <div class="unit-name" style="color:#00ccff">INTERCEPTOR</div>
+      <div class="unit-pct" style="color:#00ccff">${Math.round(e.progress*100)}%</div>
+    `;
+    ul.appendChild(row);
+  });
+
+  // Clock
+  document.getElementById('clock').textContent = `T+${state.time.toFixed(1)}s`;
+}
+
+// ── SCAN LINE ANIMATION ───────────────────────────────────────
+let scanY = 0;
+function drawScanLine() {
+  if (!state.paused) scanY = (scanY + 1.5) % canvas.height;
+  ctx.fillStyle = 'rgba(0,255,80,0.04)';
+  ctx.fillRect(0, scanY - 2, canvas.width, 3);
+}
+
+// ── MAIN RENDER LOOP ─────────────────────────────────────────
+function render() {
+  // If a map image is loaded, use transparent fill so the img shows through
+  if (mapState.image) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Light dark overlay so game elements stay readable
+    ctx.fillStyle = mapState.nvMode ? 'rgba(0,8,3,0.45)' : 'rgba(0,11,4,0.55)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#000b04';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  // Corner decorations
+  const corners = [[0,0,1,1],[canvas.width,0,-1,1],[0,canvas.height,1,-1],[canvas.width,canvas.height,-1,-1]];
+  corners.forEach(([cx,cy,sx,sy]) => {
+    ctx.strokeStyle = '#0a3318';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx+sx*20,cy); ctx.lineTo(cx,cy); ctx.lineTo(cx,cy+sy*20); ctx.stroke();
+  });
+
+  drawScanLine();
+  drawBaseConditional();
+
+  // Draw defense structures (FOW-aware)
+  drawDefenses();
+
+  // Draw all entities
+  state.entities.forEach(e => e.draw());
+
+  drawExplosions();
+
+  // Draw fog of war overlay
+  if (fowState.active) drawFog();
+
+  // Base destroyed overlay
+  if (state.baseHP <= 0) {
+    ctx.fillStyle = 'rgba(255,0,30,0.15)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#ff3344';
+    ctx.font = 'bold 40px "Orbitron"';
+    ctx.textAlign = 'center';
+    ctx.fillText('BASE DESTROYED', canvas.width/2, canvas.height/2 - 20);
+    ctx.font = '14px "Share Tech Mono"';
+    ctx.fillStyle = '#ff334488';
+    ctx.fillText('Click CLEAR FIELD to restart', canvas.width/2, canvas.height/2 + 20);
+  }
+
+  // Night-vision overlay drawn on separate canvas each frame
+  if (mapState.nvMode) drawNightVision();
+}
+
+// ── MAIN GAME LOOP ────────────────────────────────────────────
+let lastTime = 0;
+function gameLoop(timestamp) {
+  const dt = (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+
+  if (!state.paused) {
+    state.time += dt;
+
+    // Update entities
+    state.entities.forEach(e => e.update());
+    updateInterceptors();
+
+    // Update defenses
+    state.defenseStructures.forEach(d => d.update());
+
+    // ── BOT TICK (only in bot mode) ──────────────────────────
+    if (BOT.active) {
+      BOT.tick();
+      checkBotOutcome();
+    }
+
+    // Clean up done entities (keep short trail)
+    state.entities = state.entities.filter(e =>
+      e.status === 'active' || (e.trail.length > 0 && e.status !== 'expired')
+    );
+    // Fade out destroyed trails
+    state.entities.forEach(e => {
+      if (e.status !== 'active' && e.trail.length > 0) {
+        e.trail.splice(0, 3);
+      }
+    });
+    state.entities = state.entities.filter(e =>
+      e.status === 'active' || e.trail.length > 0
+    );
+  }
+
+  render();
+  updateUI();
+  requestAnimationFrame(gameLoop);
+}
+
+// ── CONTROLS ─────────────────────────────────────────────────
+document.getElementById('btn-pause').addEventListener('click', () => {
+  state.paused = !state.paused;
+  document.getElementById('btn-pause').textContent = state.paused ? '▶ RESUME' : '⏸ PAUSE';
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  state.entities = [];
+  state.explosions = [];
+  state.particles = [];
+  state.defenseStructures = [];
+  state.baseHP = CFG.BASE_HP;
+  state.stats = { launched:0, destroyed:0, jammed:0, spoofed:0, hit:0, dmg:0, interceptors:0 };
+  state.time = 0;
+  document.getElementById('log-entries').innerHTML = '';
+  document.getElementById('instructions').style.opacity = '1';
+  // Reset FOW
+  fowClear();
+  hideDefenseMode = false;
+  document.getElementById('btn-hide-defense').classList.remove('on');
+  // Reset base position
+  mapState.baseX = null; mapState.baseY = null;
+  addLog('Field cleared — awaiting orders', 'info');
+});
+
+// Escape to deselect
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hideTargetPopup();
+    state.selectedAttack = null;
+    state.selectedDefense = null;
+    state.placingDefense = false;
+    document.querySelectorAll('.attack-btn, .def-btn').forEach(b => {
+      b.classList.remove('selected', 'active-def');
+    });
+    document.getElementById('place-mode-badge').style.display = 'none';
+    document.getElementById('mode-label').textContent = 'SELECT WEAPON · CLICK MAP';
+    document.getElementById('mode-label').style.color = '';
+  }
+});
+
+// ══════════════════════════════════════════════════════════════
+//  FORMATION SAVE / LOAD SYSTEM
+// ══════════════════════════════════════════════════════════════
+
+// ── Toast helper ─────────────────────────────────────────────
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = '', 2200);
+}
+
+// ── Formation tab switcher ────────────────────────────────────
+function switchFormTab(kind, tab) {
+  const prefix = kind === 'defense' ? 'df' : 'af';
+  document.getElementById(`${prefix}-tab-preset`).classList.toggle('active', tab === 'preset');
+  document.getElementById(`${prefix}-tab-saved`).classList.toggle('active', tab === 'saved');
+  document.getElementById(`${prefix}-preset-list`).style.display = tab === 'preset' ? '' : 'none';
+  document.getElementById(`${prefix}-saved-list`).style.display  = tab === 'saved'  ? '' : 'none';
+}
+
+// ── LocalStorage helpers ──────────────────────────────────────
+function loadSavedFormations(kind) {
+  try { return JSON.parse(localStorage.getItem(`bsim_${kind}_formations`) || '[]'); }
+  catch { return []; }
+}
+function saveSavedFormations(kind, arr) {
+  localStorage.setItem(`bsim_${kind}_formations`, JSON.stringify(arr));
+}
+
+// ── Capture current state ─────────────────────────────────────
+function captureDefenseFormation() {
+  if (state.defenseStructures.length === 0) {
+    showToast('No defense structures placed!', true); return null;
+  }
+  const bw = canvas.width, bh = canvas.height;
+  return state.defenseStructures.map(d => ({
+    type: d.type,
+    rx: d.x / bw,  // store relative positions so they scale with canvas
+    ry: d.y / bh,
+  }));
+}
+
+function captureAttackFormation() {
+  const threats = state.entities.filter(e => !e.isIntercept && e.status === 'active');
+  if (threats.length === 0) {
+    showToast('No active attack units to save!', true); return null;
+  }
+  const bw = canvas.width, bh = canvas.height;
+  return threats.map(e => ({
+    type: e.type,
+    rx: e.x / bw,
+    ry: e.y / bh,
+    trx: e.tx / bw,
+    try_: e.ty / bh,
+  }));
+}
+
+// ── Deploy formations ─────────────────────────────────────────
+function deployDefenseFormation(units) {
+  const bw = canvas.width, bh = canvas.height;
+  units.forEach(u => {
+    const x = u.rx * bw, y = u.ry * bh;
+    state.defenseStructures.push(new DefenseStructure(u.type, x, y));
+  });
+  document.getElementById('instructions').style.opacity = '0';
+  showToast(`✓ Deployed ${units.length} defense units`);
+  addLog(`Formation deployed: ${units.length} defense units`, 'info');
+}
+
+function deployAttackFormation(units) {
+  const bw = canvas.width, bh = canvas.height;
+  units.forEach(u => {
+    const x  = u.rx  * bw, y  = u.ry  * bh;
+    const tx = u.trx * bw, ty = u.try_ * bh;
+    const e = new Entity(u.type, x, y, tx, ty);
+    e.customTarget = { x: tx, y: ty };
+    state.entities.push(e);
+    state.stats.launched++;
+  });
+  document.getElementById('instructions').style.opacity = '0';
+  showToast(`✓ Launched ${units.length} attack units`);
+  addLog(`Attack formation deployed: ${units.length} units`, 'info');
+}
+
+// ── Clear only defenses ───────────────────────────────────────
+function clearDefenses() {
+  state.defenseStructures = [];
+}
+
+// ══════════════════════════════════════════════════════════════
+//  IRON DOME & OTHER PRESET FORMATIONS
+//  Iron Dome uses layered rings of:
+//    - Medium-Range SAM as the primary Tamir interceptors (outer ring)
+//    - Short-Range SAM as inner close-defense layer
+//    - Radar Jammers as ELM-2084 radar simulators (flanks)
+//    - CIWS as point-defense last resort (very close)
+//    - Laser HEL as supplementary high-value protection
+// ══════════════════════════════════════════════════════════════
+
+const DEFENSE_PRESETS = [
+  // ══════════════════════════════════════════════════════════════
+  //  AEGIS FORTRESS — Optimal layered defense
+  //  Engineered for maximum intercept probability on all vectors
+  //
+  //  Design principles:
+  //  • 5 concentric rings, each using the best weapon for that range
+  //  • EW Jammers placed at canvas-edge range to soft-kill before
+  //    anything enters hard-kill zones (saves SAM ammo)
+  //  • Unlimited-ammo weapons (Laser, CIWS, EW) form permanent layers
+  //  • SAM rings offset 45° from each other — no angular blind spots
+  //  • Overlapping coverage: every approach vector hits 3-4 systems
+  //
+  //  RING BREAKDOWN (r = relative radius from center 0.5,0.5):
+  //  R1 r≈0.38 → 4× EW Jammer    (soft-kill, 160px range, all dirs)
+  //  R2 r≈0.28 → 4× Medium SAM   (hard-kill, 200px, cardinal N/E/S/W)
+  //  R3 r≈0.19 → 8× Short SAM    (hard-kill, 120px, 45° offset from R2)
+  //  R4 r≈0.12 → 6× Laser HEL    (unlimited, 92% hit, instant speed)
+  //  R5 r≈0.07 → 4× CIWS         (last resort, 88%, 15-tick firerate)
+  // ══════════════════════════════════════════════════════════════
+  {
+    id: 'aegis_fortress',
+    name: 'AEGIS FORTRESS',
+    desc: 'Optimal 5-ring layered defense — mathematically impenetrable from any single direction',
+    isAegis: true,
+    units: [
+      // ── RING 1: EW Jammer screen (r=0.38, diagonal positions)
+      // Placed at diagonals so ranges overlap the full canvas perimeter
+      { type:'ew_jammer', rx:0.5,  ry:0.12 },  // North apex
+      { type:'ew_jammer', rx:0.88, ry:0.5  },  // East apex
+      { type:'ew_jammer', rx:0.5,  ry:0.88 },  // South apex
+      { type:'ew_jammer', rx:0.12, ry:0.5  },  // West apex
+
+      // ── RING 2: Medium SAM (r=0.27, cardinal + inter-cardinal)
+      // Primary hard-kill layer — engages cruise missiles & ballistics
+      // that resist jamming before they build speed
+      { type:'medium_sam', rx:0.5,  ry:0.23 },  // N
+      { type:'medium_sam', rx:0.77, ry:0.5  },  // E
+      { type:'medium_sam', rx:0.5,  ry:0.77 },  // S
+      { type:'medium_sam', rx:0.23, ry:0.5  },  // W
+      { type:'medium_sam', rx:0.70, ry:0.30 },  // NE
+      { type:'medium_sam', rx:0.70, ry:0.70 },  // SE
+      { type:'medium_sam', rx:0.30, ry:0.70 },  // SW
+      { type:'medium_sam', rx:0.30, ry:0.30 },  // NW
+
+      // ── RING 3: Short SAM (r=0.19, 45° offset from ring 2)
+      // 75% hit probability — highest of all SAM types
+      // Staggered so there's a firing solution from any angle
+      { type:'short_sam', rx:0.50, ry:0.31 },  // N
+      { type:'short_sam', rx:0.63, ry:0.37 },  // NE
+      { type:'short_sam', rx:0.69, ry:0.50 },  // E
+      { type:'short_sam', rx:0.63, ry:0.63 },  // SE
+      { type:'short_sam', rx:0.50, ry:0.69 },  // S
+      { type:'short_sam', rx:0.37, ry:0.63 },  // SW
+      { type:'short_sam', rx:0.31, ry:0.50 },  // W
+      { type:'short_sam', rx:0.37, ry:0.37 },  // NW
+
+      // ── RING 4: Laser HEL (r=0.12, hexagonal arrangement)
+      // Unlimited ammo, 92% hit, instant intercept speed
+      // Anything that made it through 3 rings gets vaporized here
+      { type:'laser_hel', rx:0.50, ry:0.38 },  // N
+      { type:'laser_hel', rx:0.61, ry:0.44 },  // NE
+      { type:'laser_hel', rx:0.61, ry:0.56 },  // SE
+      { type:'laser_hel', rx:0.50, ry:0.62 },  // S
+      { type:'laser_hel', rx:0.39, ry:0.56 },  // SW
+      { type:'laser_hel', rx:0.39, ry:0.44 },  // NW
+
+      // ── RING 5: CIWS (r=0.07, square — absolute last line)
+      // 88% hit, 15-tick fire rate — fastest gun in the system
+      // Statistically: anything reaching this ring has <1.4% survival odds
+      { type:'ciws', rx:0.50, ry:0.43 },  // N
+      { type:'ciws', rx:0.57, ry:0.50 },  // E
+      { type:'ciws', rx:0.50, ry:0.57 },  // S
+      { type:'ciws', rx:0.43, ry:0.50 },  // W
+    ],
+  },
+  {
+    id: 'iron_dome',
+    name: 'Iron Dome',
+    desc: 'Israel\'s layered missile defense — 3-ring architecture',
+    isIronDome: true,
+    // Positions are relative (0..1) to canvas size, centered on base (0.5, 0.5)
+    // Ring 1: Outer ring — 5× Medium SAM (long-range Tamir interceptors, ~200px radius)
+    // Ring 2: Middle ring — 4× Short SAM + 2× EW Radar (ELM-2084 radar)
+    // Ring 3: Inner ring — 2× CIWS + 2× Laser (point defense)
+    units: [
+      // ── OUTER RING (Medium SAM — primary interceptors) ──
+      { type:'medium_sam', rx:0.5,  ry:0.18 },  // North
+      { type:'medium_sam', rx:0.72, ry:0.27 },  // NE
+      { type:'medium_sam', rx:0.78, ry:0.55 },  // East
+      { type:'medium_sam', rx:0.62, ry:0.78 },  // SE
+      { type:'medium_sam', rx:0.38, ry:0.78 },  // SW
+      { type:'medium_sam', rx:0.22, ry:0.55 },  // West
+      { type:'medium_sam', rx:0.28, ry:0.27 },  // NW
+
+      // ── RADAR RING (EW Jammer — ELM-2084 multimission radar) ──
+      { type:'ew_jammer',  rx:0.5,  ry:0.28 },  // North mid
+      { type:'ew_jammer',  rx:0.68, ry:0.68 },  // SE mid
+      { type:'ew_jammer',  rx:0.32, ry:0.68 },  // SW mid
+
+      // ── MIDDLE RING (Short SAM — secondary layer) ──
+      { type:'short_sam',  rx:0.5,  ry:0.34 },  // N inner
+      { type:'short_sam',  rx:0.63, ry:0.40 },  // NE inner
+      { type:'short_sam',  rx:0.63, ry:0.60 },  // SE inner
+      { type:'short_sam',  rx:0.5,  ry:0.66 },  // S inner
+      { type:'short_sam',  rx:0.37, ry:0.60 },  // SW inner
+      { type:'short_sam',  rx:0.37, ry:0.40 },  // NW inner
+
+      // ── INNER RING (CIWS + Laser — last-resort point defense) ──
+      { type:'ciws',        rx:0.56, ry:0.44 },
+      { type:'ciws',        rx:0.44, ry:0.44 },
+      { type:'ciws',        rx:0.56, ry:0.56 },
+      { type:'ciws',        rx:0.44, ry:0.56 },
+      { type:'laser_hel',   rx:0.52, ry:0.46 },
+      { type:'laser_hel',   rx:0.48, ry:0.54 },
+    ],
+  },
+  {
+    id: 'perimeter',
+    name: 'Perimeter Wall',
+    desc: 'Border of SAMs + CIWS at cardinal points',
+    units: [
+      { type:'medium_sam', rx:0.5,  ry:0.12 },
+      { type:'medium_sam', rx:0.88, ry:0.5  },
+      { type:'medium_sam', rx:0.5,  ry:0.88 },
+      { type:'medium_sam', rx:0.12, ry:0.5  },
+      { type:'short_sam',  rx:0.72, ry:0.18 },
+      { type:'short_sam',  rx:0.82, ry:0.72 },
+      { type:'short_sam',  rx:0.28, ry:0.82 },
+      { type:'short_sam',  rx:0.18, ry:0.28 },
+      { type:'ciws',       rx:0.5,  ry:0.5  },
+      { type:'ew_jammer',  rx:0.5,  ry:0.25 },
+      { type:'ew_jammer',  rx:0.5,  ry:0.75 },
+    ],
+  },
+  {
+    id: 'point_defense',
+    name: 'Point Defense',
+    desc: 'Dense close-range protection of the base',
+    units: [
+      { type:'laser_hel',  rx:0.52, ry:0.44 },
+      { type:'laser_hel',  rx:0.48, ry:0.56 },
+      { type:'laser_hel',  rx:0.56, ry:0.56 },
+      { type:'laser_hel',  rx:0.44, ry:0.44 },
+      { type:'ciws',       rx:0.5,  ry:0.40 },
+      { type:'ciws',       rx:0.60, ry:0.5  },
+      { type:'ciws',       rx:0.5,  ry:0.60 },
+      { type:'ciws',       rx:0.40, ry:0.5  },
+      { type:'ew_jammer',  rx:0.5,  ry:0.32 },
+      { type:'ew_jammer',  rx:0.68, ry:0.5  },
+    ],
+  },
+
+  // ── NEW PRESETS ───────────────────────────────────────────────
+
+  {
+    id: 'fortress_ring',
+    name: 'Fortress Ring',
+    isNew: true,
+    desc: 'Tight concentric rings — overwhelming density near base, SAMs outside',
+    units: [
+      // Outer SAM ring (8-point)
+      { type:'medium_sam', rx:0.50, ry:0.15 },
+      { type:'medium_sam', rx:0.75, ry:0.22 },
+      { type:'medium_sam', rx:0.85, ry:0.50 },
+      { type:'medium_sam', rx:0.75, ry:0.78 },
+      { type:'medium_sam', rx:0.50, ry:0.85 },
+      { type:'medium_sam', rx:0.25, ry:0.78 },
+      { type:'medium_sam', rx:0.15, ry:0.50 },
+      { type:'medium_sam', rx:0.25, ry:0.22 },
+      // Mid ring EW
+      { type:'ew_jammer', rx:0.50, ry:0.28 },
+      { type:'ew_jammer', rx:0.72, ry:0.50 },
+      { type:'ew_jammer', rx:0.50, ry:0.72 },
+      { type:'ew_jammer', rx:0.28, ry:0.50 },
+      // Inner laser hexagon
+      { type:'laser_hel', rx:0.50, ry:0.37 },
+      { type:'laser_hel', rx:0.62, ry:0.44 },
+      { type:'laser_hel', rx:0.62, ry:0.56 },
+      { type:'laser_hel', rx:0.50, ry:0.63 },
+      { type:'laser_hel', rx:0.38, ry:0.56 },
+      { type:'laser_hel', rx:0.38, ry:0.44 },
+      // Core CIWS
+      { type:'ciws', rx:0.50, ry:0.43 },
+      { type:'ciws', rx:0.57, ry:0.50 },
+      { type:'ciws', rx:0.50, ry:0.57 },
+      { type:'ciws', rx:0.43, ry:0.50 },
+    ],
+  },
+
+  {
+    id: 'asymmetric_ambush',
+    name: 'Asymmetric Ambush',
+    isNew: true,
+    desc: 'Heavy north/east kill zone with EW screen — lures threats into concentrated fire',
+    units: [
+      // Heavy north kill zone
+      { type:'medium_sam', rx:0.30, ry:0.15 },
+      { type:'medium_sam', rx:0.50, ry:0.12 },
+      { type:'medium_sam', rx:0.70, ry:0.15 },
+      { type:'short_sam',  rx:0.40, ry:0.22 },
+      { type:'short_sam',  rx:0.60, ry:0.22 },
+      { type:'laser_hel',  rx:0.50, ry:0.30 },
+      // East flank
+      { type:'medium_sam', rx:0.82, ry:0.35 },
+      { type:'medium_sam', rx:0.82, ry:0.65 },
+      { type:'drone_interceptor', rx:0.75, ry:0.50 },
+      // EW screen south — draws threats north into kill zone
+      { type:'ew_jammer',  rx:0.25, ry:0.75 },
+      { type:'ew_jammer',  rx:0.50, ry:0.82 },
+      { type:'ew_jammer',  rx:0.75, ry:0.75 },
+      // Close base defense
+      { type:'ciws',       rx:0.43, ry:0.43 },
+      { type:'ciws',       rx:0.57, ry:0.43 },
+      { type:'laser_hel',  rx:0.50, ry:0.57 },
+    ],
+  },
+
+  {
+    id: 'ew_screen',
+    name: 'EW Screen',
+    isNew: true,
+    desc: 'Massive electronic warfare network — soft-kills drones before they see anything',
+    units: [
+      // Full-perimeter EW wall (8 jammers)
+      { type:'ew_jammer', rx:0.50, ry:0.10 },
+      { type:'ew_jammer', rx:0.78, ry:0.18 },
+      { type:'ew_jammer', rx:0.90, ry:0.50 },
+      { type:'ew_jammer', rx:0.78, ry:0.82 },
+      { type:'ew_jammer', rx:0.50, ry:0.90 },
+      { type:'ew_jammer', rx:0.22, ry:0.82 },
+      { type:'ew_jammer', rx:0.10, ry:0.50 },
+      { type:'ew_jammer', rx:0.22, ry:0.18 },
+      // Drone interceptor web
+      { type:'drone_interceptor', rx:0.50, ry:0.25 },
+      { type:'drone_interceptor', rx:0.75, ry:0.50 },
+      { type:'drone_interceptor', rx:0.50, ry:0.75 },
+      { type:'drone_interceptor', rx:0.25, ry:0.50 },
+      // Hard-kill core for jam-resistant threats
+      { type:'medium_sam', rx:0.60, ry:0.40 },
+      { type:'medium_sam', rx:0.40, ry:0.40 },
+      { type:'medium_sam', rx:0.60, ry:0.60 },
+      { type:'medium_sam', rx:0.40, ry:0.60 },
+      { type:'laser_hel',  rx:0.50, ry:0.50 },
+    ],
+  },
+
+  {
+    id: 'hedgehog',
+    name: 'Hedgehog',
+    isNew: true,
+    desc: 'Soviet-style all-direction short-range bristle — every angle covered at close range',
+    units: [
+      // Short SAMs in tight 12-point circle
+      { type:'short_sam', rx:0.50, ry:0.28 },
+      { type:'short_sam', rx:0.60, ry:0.30 },
+      { type:'short_sam', rx:0.68, ry:0.37 },
+      { type:'short_sam', rx:0.71, ry:0.47 },
+      { type:'short_sam', rx:0.68, ry:0.57 },
+      { type:'short_sam', rx:0.60, ry:0.64 },
+      { type:'short_sam', rx:0.50, ry:0.67 },
+      { type:'short_sam', rx:0.40, ry:0.64 },
+      { type:'short_sam', rx:0.32, ry:0.57 },
+      { type:'short_sam', rx:0.29, ry:0.47 },
+      { type:'short_sam', rx:0.32, ry:0.37 },
+      { type:'short_sam', rx:0.40, ry:0.30 },
+      // CIWS inner star
+      { type:'ciws', rx:0.50, ry:0.36 },
+      { type:'ciws', rx:0.61, ry:0.43 },
+      { type:'ciws', rx:0.61, ry:0.55 },
+      { type:'ciws', rx:0.50, ry:0.62 },
+      { type:'ciws', rx:0.39, ry:0.55 },
+      { type:'ciws', rx:0.39, ry:0.43 },
+      // Laser core
+      { type:'laser_hel', rx:0.50, ry:0.50 },
+    ],
+  },
+
+  {
+    id: 'coastal_battery',
+    name: 'Coastal Battery',
+    isNew: true,
+    desc: 'Linear shore-defense — heavy long-range wall to the north, light southern coverage',
+    units: [
+      // Northern heavy battery line
+      { type:'medium_sam', rx:0.15, ry:0.14 },
+      { type:'medium_sam', rx:0.32, ry:0.10 },
+      { type:'medium_sam', rx:0.50, ry:0.09 },
+      { type:'medium_sam', rx:0.68, ry:0.10 },
+      { type:'medium_sam', rx:0.85, ry:0.14 },
+      // Second line short SAM
+      { type:'short_sam',  rx:0.24, ry:0.20 },
+      { type:'short_sam',  rx:0.42, ry:0.18 },
+      { type:'short_sam',  rx:0.58, ry:0.18 },
+      { type:'short_sam',  rx:0.76, ry:0.20 },
+      // EW flanks
+      { type:'ew_jammer',  rx:0.08, ry:0.35 },
+      { type:'ew_jammer',  rx:0.92, ry:0.35 },
+      // Drone intercept mid
+      { type:'drone_interceptor', rx:0.35, ry:0.32 },
+      { type:'drone_interceptor', rx:0.65, ry:0.32 },
+      // Base close defense
+      { type:'laser_hel',  rx:0.44, ry:0.44 },
+      { type:'laser_hel',  rx:0.56, ry:0.44 },
+      { type:'ciws',       rx:0.50, ry:0.56 },
+    ],
+  },
+
+  // ── GROUND ZERO (special — picks random saved formation, fog of war) ──
+  {
+    id: 'ground_zero',
+    name: 'GROUND ZERO',
+    isGroundZero: true,
+    desc: '??? CLASSIFIED — Random formation, fog of war active. Deploy recon drones to find base & defenses.',
+    units: [], // dynamically filled at deploy time
+  },
+];
+
+const ATTACK_PRESETS = [
+  {
+    id: 'saturation',
+    name: 'Saturation Strike',
+    desc: 'Mass swarm to overwhelm all defense layers',
+    units: (() => {
+      const u = [];
+      // 15 swarm drones from northern arc
+      for (let i = 0; i < 15; i++) {
+        const a = (i / 14) * Math.PI * 0.8 - 0.4;
+        u.push({ type:'swarm_drone', rx: 0.5 + Math.cos(a)*0.45, ry: 0.08 + Math.sin(a)*0.05, trx:0.5, try_:0.5 });
+      }
+      // 4 cruise missiles from the east
+      for (let i = 0; i < 4; i++) {
+        u.push({ type:'cruise_missile', rx:0.95, ry:0.3 + i*0.12, trx:0.5, try_:0.5 });
+      }
+      return u;
+    })(),
+  },
+  {
+    id: 'pincer',
+    name: 'Pincer Assault',
+    desc: 'Two-pronged attack from opposite flanks',
+    units: (() => {
+      const u = [];
+      for (let i = 0; i < 5; i++) {
+        u.push({ type:'attack_drone', rx:0.05, ry:0.3+i*0.1, trx:0.5, try_:0.5 });
+        u.push({ type:'attack_drone', rx:0.95, ry:0.3+i*0.1, trx:0.5, try_:0.5 });
+      }
+      u.push({ type:'cruise_missile', rx:0.05, ry:0.5, trx:0.5, try_:0.5 });
+      u.push({ type:'cruise_missile', rx:0.95, ry:0.5, trx:0.5, try_:0.5 });
+      return u;
+    })(),
+  },
+  {
+    id: 'stealth_loit',
+    name: 'Stealth Wave',
+    desc: 'Loitering munitions + recon — hard to jam',
+    units: (() => {
+      const u = [];
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 7) * Math.PI * 2;
+        u.push({ type:'loitering', rx:0.5+Math.cos(a)*0.42, ry:0.5+Math.sin(a)*0.42, trx:0.5, try_:0.5 });
+      }
+      for (let i = 0; i < 3; i++) {
+        u.push({ type:'recon_drone', rx:0.1, ry:0.2+i*0.3, trx:0.5, try_:0.5 });
+      }
+      return u;
+    })(),
+  },
+];
+
+// ── Render formation lists ────────────────────────────────────
+function renderDefenseFormations() {
+  // Presets
+  const presetEl = document.getElementById('df-preset-list');
+  presetEl.innerHTML = '';
+  DEFENSE_PRESETS.forEach(p => {
+    const btn = document.createElement('div');
+    btn.className = 'formation-btn preset';
+    btn.title = p.desc;
+
+    let badge = '';
+    if (p.isAegis)      badge = '<span class="aegis-badge">★ OPTIMAL</span>';
+    if (p.isIronDome)   badge = '<span class="iron-dome-badge">IRON DOME</span>';
+    if (p.isGroundZero) badge = '<span class="gz-badge">⚠ CLASSIFIED</span>';
+    if (p.isNew)        badge = '<span class="new-preset-badge">NEW</span>';
+
+    const icon = p.isGroundZero ? '?' : p.isAegis ? '★' : '⬡';
+
+    btn.innerHTML = `
+      <span class="f-icon">${icon}</span>
+      <span class="f-name">${p.name}</span>
+      ${badge}
+    `;
+
+    if (p.isAegis) {
+      btn.style.borderColor = 'rgba(255,238,0,0.35)';
+      btn.style.background  = 'rgba(255,238,0,0.04)';
+      btn.style.color       = '#ffee00';
+    }
+    if (p.isGroundZero) {
+      btn.style.borderColor = 'rgba(255,51,68,0.4)';
+      btn.style.background  = 'rgba(255,51,68,0.05)';
+      btn.style.color       = 'var(--red)';
+    }
+
+    btn.addEventListener('click', () => {
+      if (p.isGroundZero) {
+        deployGroundZero();
+      } else {
+        clearDefenses();
+        deployDefenseFormation(p.units);
+      }
+      renderDefenseFormations();
+    });
+    presetEl.appendChild(btn);
+  });
+
+  // Saved
+  const savedEl = document.getElementById('df-saved-list');
+  savedEl.innerHTML = '';
+  const saved = loadSavedFormations('defense');
+  if (saved.length === 0) {
+    savedEl.innerHTML = '<div class="f-empty">NO SAVED FORMATIONS</div>';
+  } else {
+    saved.forEach((f, idx) => {
+      const btn = document.createElement('div');
+      btn.className = 'formation-btn';
+      const isPinned = f._pinned;
+      if (isPinned) {
+        btn.style.borderColor = 'rgba(255,238,0,0.35)';
+        btn.style.background  = 'rgba(255,238,0,0.04)';
+        btn.style.color       = '#ffee00';
+      }
+      btn.innerHTML = `
+        <span class="f-icon">${isPinned ? '★' : '▣'}</span>
+        <span class="f-name">${f.name}</span>
+        ${isPinned ? '<span class="aegis-badge">SAVED</span>' : `<span class="f-del" title="Delete" data-idx="${idx}">✕</span>`}
+      `;
+      btn.addEventListener('click', (e) => {
+        if (e.target.classList.contains('f-del')) {
+          const arr = loadSavedFormations('defense');
+          arr.splice(idx, 1);
+          saveSavedFormations('defense', arr);
+          showToast('Formation deleted');
+          renderDefenseFormations();
+          return;
+        }
+        clearDefenses();
+        deployDefenseFormation(f.units);
+      });
+      savedEl.appendChild(btn);
+    });
+  }
+  // start on preset tab
+  switchFormTab('defense', 'preset');
+}
+
+function renderAttackFormations() {
+  const presetEl = document.getElementById('af-preset-list');
+  presetEl.innerHTML = '';
+  ATTACK_PRESETS.forEach(p => {
+    const btn = document.createElement('div');
+    btn.className = 'formation-btn preset';
+    btn.title = p.desc;
+    btn.innerHTML = `<span class="f-icon">⚡</span><span class="f-name">${p.name}</span>`;
+    btn.addEventListener('click', () => {
+      deployAttackFormation(p.units);
+    });
+    presetEl.appendChild(btn);
+  });
+
+  const savedEl = document.getElementById('af-saved-list');
+  savedEl.innerHTML = '';
+  const saved = loadSavedFormations('attack');
+  if (saved.length === 0) {
+    savedEl.innerHTML = '<div class="f-empty">NO SAVED FORMATIONS</div>';
+  } else {
+    saved.forEach((f, idx) => {
+      const btn = document.createElement('div');
+      btn.className = 'formation-btn';
+      btn.innerHTML = `
+        <span class="f-icon">▷</span>
+        <span class="f-name">${f.name}</span>
+        <span class="f-del" title="Delete" data-idx="${idx}">✕</span>
+      `;
+      btn.addEventListener('click', (e) => {
+        if (e.target.classList.contains('f-del')) {
+          const arr = loadSavedFormations('attack');
+          arr.splice(idx, 1);
+          saveSavedFormations('attack', arr);
+          showToast('Formation deleted');
+          renderAttackFormations();
+          return;
+        }
+        deployAttackFormation(f.units);
+      });
+      savedEl.appendChild(btn);
+    });
+  }
+  switchFormTab('attack', 'preset');
+}
+
+// ── Save button handlers ──────────────────────────────────────
+document.getElementById('df-save-btn').addEventListener('click', () => {
+  const name = document.getElementById('df-save-name').value.trim();
+  if (!name) { showToast('Enter a formation name', true); return; }
+  const units = captureDefenseFormation();
+  if (!units) return;
+  const arr = loadSavedFormations('defense');
+  arr.push({ name, units });
+  saveSavedFormations('defense', arr);
+  document.getElementById('df-save-name').value = '';
+  showToast(`✓ Defense formation "${name}" saved`);
+  renderDefenseFormations();
+  switchFormTab('defense', 'saved');
+});
+
+document.getElementById('af-save-btn').addEventListener('click', () => {
+  const name = document.getElementById('af-save-name').value.trim();
+  if (!name) { showToast('Enter a formation name', true); return; }
+  const units = captureAttackFormation();
+  if (!units) return;
+  const arr = loadSavedFormations('attack');
+  arr.push({ name, units });
+  saveSavedFormations('attack', arr);
+  document.getElementById('af-save-name').value = '';
+  showToast(`✓ Attack formation "${name}" saved`);
+  renderAttackFormations();
+  switchFormTab('attack', 'saved');
+});
+
+// ══════════════════════════════════════════════════════════════
+//  AI DEFENSE BOT — Adaptive Integrated Air Defense System
+//
+//  Architecture inspired by:
+//  - IADS (Integrated Air Defense System) layered doctrine
+//  - Patriot PAC-3 threat-prioritization algorithms
+//  - Iron Dome battle management unit (BMU) logic
+//  - Game AI: threat classification → gap analysis → deployment
+//
+//  The bot:
+//  1. Analyzes incoming threats in real-time (type, vector, speed)
+//  2. Detects coverage gaps using angular sector analysis
+//  3. Scores candidate placement positions
+//  4. Deploys optimal defense for each threat class
+//  5. Manages a budget system — harder difficulties get more resources
+//  6. Escalates response when penetrations occur
+// ══════════════════════════════════════════════════════════════
+
+const BOT = {
+  active:      false,
+  difficulty:  'normal',
+  budget:      0,
+  maxBudget:   0,
+  thinkTimer:  0,       // ticks between analysis cycles
+  deployQueue: [],      // pending deploy actions with delays
+  thoughtLog:  [],
+  tickCount:   0,
+  placedCount: 0,
+  wavesSeen:   {},      // track which threat types have appeared
+  sectorCoverage: new Array(8).fill(0), // 8 cardinal+diagonal sectors
+  emergencyMode: false,
+  lastBaseHP:  1000,
+  penetrationCount: 0,
+
+  // Difficulty settings
+  DIFFICULTIES: {
+    normal: {
+      budget: 18, regenRate: 0.015, thinkInterval: 180,
+      deployDelay: 120, maxUnits: 18, budgetPerUnit: 1,
+      label: 'NORMAL', color: '#ffee00',
+    },
+    hard: {
+      budget: 28, regenRate: 0.025, thinkInterval: 90,
+      deployDelay: 60, maxUnits: 28, budgetPerUnit: 1,
+      label: 'HARD', color: '#ff8800',
+    },
+    elite: {
+      budget: 40, regenRate: 0.04, thinkInterval: 45,
+      deployDelay: 20, maxUnits: 45, budgetPerUnit: 1,
+      label: 'ELITE', color: '#cc44ff',
+    },
+  },
+
+  // Unit cost in budget points
+  COSTS: {
+    short_sam: 2,
+    medium_sam: 3,
+    laser_hel:  2,
+    ciws:       2,
+    ew_jammer:  2,
+    drone_interceptor: 2,
+  },
+
+  // What counters what (priority weights)
+  COUNTER_TABLE: {
+    swarm_drone:    ['ew_jammer','drone_interceptor','ciws','laser_hel'],
+    attack_drone:   ['ew_jammer','short_sam','laser_hel','drone_interceptor'],
+    loitering:      ['ew_jammer','laser_hel','ciws','short_sam'],
+    cruise_missile: ['medium_sam','short_sam','laser_hel','ciws'],
+    ballistic:      ['medium_sam','medium_sam','short_sam','laser_hel'],
+    recon_drone:    ['ew_jammer','drone_interceptor'],
+  },
+
+  think(log) { this.addThought(log, 'analysis'); },
+  warn(log)  { this.addThought(log, 'warning'); },
+  alert(log) { this.addThought(log, 'critical'); },
+  act(log)   { this.addThought(log, 'placing'); },
+
+  addThought(msg, type = 'analysis') {
+    this.thoughtLog.unshift({ msg, type, t: state.time });
+    if (this.thoughtLog.length > 40) this.thoughtLog.pop();
+    const el = document.getElementById('bot-thought-log');
+    if (el) {
+      el.innerHTML = this.thoughtLog.slice(0, 14).map(t =>
+        `<div class="bot-thought ${t.type}">[${t.t.toFixed(1)}s] ${t.msg}</div>`
+      ).join('');
+    }
+    // Update top HUD thinking label
+    const tl = document.getElementById('bot-thinking');
+    if (tl) { tl.textContent = '◈ ' + msg; tl.className = 'active'; }
+  },
+
+  // ── Sector analysis: divide field into 8 wedges around base ──
+  getSector(ex, ey) {
+    const bp = getBasePos();
+    const a = Math.atan2(ey - bp.y, ex - bp.x);
+    // 0=E, 1=SE, 2=S, 3=SW, 4=W, 5=NW, 6=N, 7=NE
+    return Math.floor(((a + Math.PI) / (Math.PI * 2)) * 8) % 8;
+  },
+
+  SECTOR_NAMES: ['E','SE','S','SW','W','NW','N','NE'],
+
+  // ── Analyze what's attacking ──────────────────────────────────
+  analyzeThreats() {
+    const threats = state.entities.filter(e => e.status === 'active' && !e.isIntercept);
+    if (threats.length === 0) return null;
+
+    const bp = getBasePos();
+    const analysis = {
+      total: threats.length,
+      byType: {},
+      bySector: new Array(8).fill(0),
+      mostDangerous: null,
+      maxDamage: 0,
+      closestDist: Infinity,
+      hotSectors: [],
+      avgJamRes: 0,
+      highStealth: 0,
+      fastCount: 0,
+    };
+
+    threats.forEach(t => {
+      const ttype = t.type;
+      analysis.byType[ttype] = (analysis.byType[ttype] || 0) + 1;
+      const sector = this.getSector(t.x, t.y);
+      analysis.bySector[sector]++;
+      const dist = Math.hypot(t.x - bp.x, t.y - bp.y);
+      if (dist < analysis.closestDist) analysis.closestDist = dist;
+      const danger = t.cfg.damage * (1 - dist / (canvas.width * 0.7));
+      if (danger > analysis.maxDamage) {
+        analysis.maxDamage = danger;
+        analysis.mostDangerous = t;
+      }
+      analysis.avgJamRes += (THREATS[ttype]?.jamRes || 0);
+      if ((THREATS[ttype]?.stealth || 0) > 0.5) analysis.highStealth++;
+      if ((THREATS[ttype]?.speed || 0) > 3) analysis.fastCount++;
+      this.wavesSeen[ttype] = true;
+    });
+    analysis.avgJamRes /= threats.length;
+    analysis.hotSectors = analysis.bySector
+      .map((count, i) => ({ sector: i, count }))
+      .filter(s => s.count > 0)
+      .sort((a,b) => b.count - a.count);
+
+    return analysis;
+  },
+
+  // ── Scan coverage gaps ────────────────────────────────────────
+  getCoverageMap() {
+    const bp = getBasePos();
+    const coverage = new Array(8).fill(0); // per sector
+    state.defenseStructures.forEach(d => {
+      if (!d.active) return;
+      // Which sectors does this unit cover?
+      const dist = Math.hypot(d.x - bp.x, d.y - bp.y);
+      const angularReach = Math.asin(Math.min(1, d.cfg.range / Math.max(dist, 1)));
+      const baseAngle = Math.atan2(d.y - bp.y, d.x - bp.x);
+      for (let s = 0; s < 8; s++) {
+        const sAngle = (s / 8) * Math.PI * 2 - Math.PI;
+        let diff = Math.abs(baseAngle - sAngle);
+        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+        if (diff < angularReach + 0.4) coverage[s]++;
+      }
+    });
+    return coverage;
+  },
+
+  // ── Find best position to place a new unit ────────────────────
+  findPlacementPosition(defType, targetSector, ring) {
+    const bp = getBasePos();
+    const cfg = DEFENSES[defType];
+    const bw = canvas.width, bh = canvas.height;
+
+    // Ring radii (relative to canvas size)
+    const ringRadii = {
+      outer:  Math.min(bw, bh) * 0.35,
+      middle: Math.min(bw, bh) * 0.22,
+      inner:  Math.min(bw, bh) * 0.13,
+      core:   Math.min(bw, bh) * 0.07,
+    };
+    const radius = ringRadii[ring] || ringRadii.middle;
+
+    // Aim toward the hot sector
+    const sectorAngle = (targetSector / 8) * Math.PI * 2 - Math.PI;
+    // Add slight jitter to avoid stacking
+    const jitter = (Math.random() - 0.5) * 0.3;
+    const angle = sectorAngle + jitter;
+    let x = bp.x + Math.cos(angle) * radius;
+    let y = bp.y + Math.sin(angle) * radius;
+
+    // Clamp to canvas with margin
+    const margin = 30;
+    x = Math.max(margin, Math.min(bw - margin, x));
+    y = Math.max(margin, Math.min(bh - margin, y));
+
+    // Avoid stacking on existing units
+    const tooClose = state.defenseStructures.some(d =>
+      Math.hypot(d.x - x, d.y - y) < 35
+    );
+    if (tooClose) {
+      x += (Math.random() - 0.5) * 70;
+      y += (Math.random() - 0.5) * 70;
+      x = Math.max(margin, Math.min(bw - margin, x));
+      y = Math.max(margin, Math.min(bh - margin, y));
+    }
+    return { x, y };
+  },
+
+  // ── Core decision engine ──────────────────────────────────────
+  decide() {
+    if (!this.active) return;
+    const cfg = this.DIFFICULTIES[this.difficulty];
+    const analysis = this.analyzeThreats();
+
+    // Regenerate budget slowly
+    this.budget = Math.min(this.maxBudget, this.budget + cfg.regenRate);
+
+    if (!analysis) {
+      this.think('No threats detected — monitoring…');
+      return;
+    }
+
+    const bp = getBasePos();
+    const coverage = this.getCoverageMap();
+    const maxUnits = cfg.maxUnits;
+    const currentUnits = state.defenseStructures.filter(d => d.active).length;
+
+    // ── EMERGENCY: something just hit ────────────────────────────
+    const currentHP = state.baseHP;
+    if (currentHP < this.lastBaseHP) {
+      const dmgTaken = this.lastBaseHP - currentHP;
+      this.penetrationCount++;
+      this.emergencyMode = true;
+      this.alert(`PENETRATION DETECTED! -${dmgTaken}HP. Escalating response.`);
+      this.budget += 3; // emergency budget bonus
+    }
+    this.lastBaseHP = currentHP;
+
+    // ── EMERGENCY: very close threat ─────────────────────────────
+    if (analysis.closestDist < Math.min(canvas.width, canvas.height) * 0.20) {
+      this.emergencyMode = true;
+      this.alert(`CRITICAL: Threat at ${Math.round(analysis.closestDist)}px — deploying CIWS/Laser!`);
+      // Emergency inner-ring deployment
+      this.queueDeploy('ciws', analysis.hotSectors[0]?.sector || 0, 'core', cfg.deployDelay);
+      this.queueDeploy('laser_hel', analysis.hotSectors[0]?.sector || 2, 'inner', cfg.deployDelay);
+      return;
+    }
+
+    // ── BUILD COVERAGE MAP FIRST (one-time foundation) ───────────
+    if (currentUnits < 4 && this.budget >= 4) {
+      this.think('Building initial radar screen…');
+      // Place EW jammers at 4 cardinal points immediately
+      [6,0,2,4].forEach((sec, i) => {
+        this.queueDeploy('ew_jammer', sec, 'outer', cfg.deployDelay * (i + 1));
+      });
+      return;
+    }
+
+    // ── THREAT-SPECIFIC RESPONSE ──────────────────────────────────
+    const dominant = Object.entries(analysis.byType)
+      .sort((a,b) => b[1] - a[1])[0];
+    if (!dominant) return;
+    const [dominantType, dominantCount] = dominant;
+
+    // High jam resistance → need hard-kill SAMs
+    if (analysis.avgJamRes > 0.6 && this.countType('medium_sam') < 4) {
+      this.warn(`High jam-resistant threats (${dominantType}) — deploying Medium SAM`);
+      const hotSec = analysis.hotSectors[0]?.sector || 6;
+      this.queueDeploy('medium_sam', hotSec, 'outer', cfg.deployDelay);
+      this.queueDeploy('medium_sam', (hotSec + 4) % 8, 'outer', cfg.deployDelay * 2);
+      return;
+    }
+
+    // Many drones → EW + drone interceptors
+    if ((analysis.byType.swarm_drone || 0) + (analysis.byType.attack_drone || 0) > 4
+        && this.countType('ew_jammer') < 3) {
+      this.warn(`Drone swarm detected (${dominantCount} units) — deploying EW + interceptors`);
+      const hotSec = analysis.hotSectors[0]?.sector || 0;
+      this.queueDeploy('ew_jammer', hotSec, 'outer', cfg.deployDelay);
+      this.queueDeploy('drone_interceptor', hotSec, 'middle', cfg.deployDelay * 1.5);
+      return;
+    }
+
+    // Stealth threats → EW + Laser (laser unaffected by stealth)
+    if (analysis.highStealth > 2 && this.countType('laser_hel') < 4) {
+      this.warn(`High-stealth units detected — deploying Laser HEL`);
+      const hotSec = analysis.hotSectors[0]?.sector || 0;
+      this.queueDeploy('laser_hel', hotSec, 'inner', cfg.deployDelay);
+      this.queueDeploy('laser_hel', (hotSec + 2) % 8, 'inner', cfg.deployDelay * 2);
+      return;
+    }
+
+    // Fast threats (cruise/ballistic) → Medium SAM intercept early
+    if (analysis.fastCount > 1 && this.countType('medium_sam') < 6) {
+      this.warn(`Fast inbound (speed>${3}) — deploying Medium SAM intercept layer`);
+      for (const hs of analysis.hotSectors.slice(0, 2)) {
+        this.queueDeploy('medium_sam', hs.sector, 'outer', cfg.deployDelay);
+      }
+      return;
+    }
+
+    // ── GAP FILLING: reinforce uncovered sectors ──────────────────
+    const gapSectors = coverage
+      .map((c, i) => ({ c, i }))
+      .filter(s => s.c === 0)
+      .sort((a, b) => (analysis.bySector[b.i] || 0) - (analysis.bySector[a.i] || 0));
+
+    if (gapSectors.length > 0 && currentUnits < maxUnits && this.budget >= 2) {
+      const gap = gapSectors[0];
+      this.think(`Coverage gap in ${this.SECTOR_NAMES[gap.i]} sector — reinforcing`);
+      const counter = this.COUNTER_TABLE[dominantType]?.[0] || 'short_sam';
+      const ring = this.countType(counter) > 2 ? 'middle' : 'outer';
+      this.queueDeploy(counter, gap.i, ring, cfg.deployDelay);
+      return;
+    }
+
+    // ── LAYER REINFORCEMENT: add depth ────────────────────────────
+    if (currentUnits < maxUnits && this.budget >= 2) {
+      const counters = this.COUNTER_TABLE[dominantType] || ['short_sam'];
+      const leastUsed = counters.find(c => this.countType(c) < 3) || counters[0];
+      const hotSec = analysis.hotSectors[0]?.sector || Math.floor(Math.random() * 8);
+      this.think(`Reinforcing ${this.SECTOR_NAMES[hotSec]} with ${DEFENSES[leastUsed]?.label}`);
+      this.queueDeploy(leastUsed, hotSec, 'middle', cfg.deployDelay);
+      return;
+    }
+
+    // If budget low, just watch
+    if (this.budget < 2) {
+      this.think(`Conserving resources (budget: ${this.budget.toFixed(1)}) — monitoring`);
+    }
+  },
+
+  // ── Queue a deployment action ─────────────────────────────────
+  queueDeploy(defType, sector, ring, delay) {
+    const cost = this.COSTS[defType] || 2;
+    if (this.budget < cost) {
+      this.think(`Insufficient budget for ${DEFENSES[defType]?.label} (need ${cost}, have ${this.budget.toFixed(1)})`);
+      return;
+    }
+    if (state.defenseStructures.filter(d => d.active).length >= this.DIFFICULTIES[this.difficulty].maxUnits) {
+      this.think('Unit cap reached — cannot deploy more');
+      return;
+    }
+    this.budget -= cost;
+    const pos = this.findPlacementPosition(defType, sector, ring);
+    this.deployQueue.push({
+      defType, pos, delay, countdown: delay,
+      sector, ring, cost,
+    });
+    this.act(`Queued: ${DEFENSES[defType]?.label} → ${this.SECTOR_NAMES[sector]} sector`);
+  },
+
+  // ── Process deploy queue each tick ───────────────────────────
+  processQueue() {
+    this.deployQueue = this.deployQueue.filter(item => {
+      item.countdown--;
+      if (item.countdown <= 0) {
+        const ds = new DefenseStructure(item.defType, item.pos.x, item.pos.y);
+        state.defenseStructures.push(ds);
+        this.placedCount++;
+        this.showDeployAnimation(item.pos.x, item.pos.y, DEFENSES[item.defType].color);
+        addLog(`◈ BOT deployed ${DEFENSES[item.defType].label}`, 'info');
+        return false; // remove from queue
+      }
+      return true;
+    });
+  },
+
+  // ── Visual deploy animation ───────────────────────────────────
+  showDeployAnimation(x, y, color) {
+    const wrapRect = wrap.getBoundingClientRect();
+    const canvasRect = canvas.getBoundingClientRect();
+    const ring = document.createElement('div');
+    ring.className = 'bot-deploy-ring';
+    ring.style.left = (x + canvasRect.left - wrapRect.left) + 'px';
+    ring.style.top  = (y + canvasRect.top  - wrapRect.top)  + 'px';
+    ring.style.borderColor = color;
+    wrap.appendChild(ring);
+    setTimeout(() => ring.remove(), 900);
+  },
+
+  // ── Count existing units of a type ───────────────────────────
+  countType(defType) {
+    return state.defenseStructures.filter(d => d.active && d.type === defType).length;
+  },
+
+  // ── Main tick ─────────────────────────────────────────────────
+  tick() {
+    if (!this.active) return;
+    this.tickCount++;
+    this.processQueue();
+    const cfg = this.DIFFICULTIES[this.difficulty];
+    // Think at interval
+    if (this.tickCount % cfg.thinkInterval === 0) {
+      this.decide();
+    }
+    this.updateBotUI();
+  },
+
+  // ── Start bot session ─────────────────────────────────────────
+  start(difficulty) {
+    this.difficulty = difficulty || 'normal';
+    const cfg = this.DIFFICULTIES[this.difficulty];
+    this.active      = true;
+    this.budget      = cfg.budget;
+    this.maxBudget   = cfg.budget;
+    this.thinkTimer  = 0;
+    this.deployQueue = [];
+    this.thoughtLog  = [];
+    this.tickCount   = 0;
+    this.placedCount = 0;
+    this.wavesSeen   = {};
+    this.emergencyMode = false;
+    this.lastBaseHP  = state.baseHP;
+    this.penetrationCount = 0;
+    this.sectorCoverage = new Array(8).fill(0);
+    this._outcomeShown = false;
+    if (this._victoryCheck) { clearTimeout(this._victoryCheck); this._victoryCheck = null; }
+
+    // Clear any existing defenses for fair start
+    state.defenseStructures = [];
+
+    // Place ONE initial EW jammer at center as "radar online" signal
+    const bp = getBasePos();
+    const ds = new DefenseStructure('ew_jammer', bp.x, bp.y - Math.min(canvas.width,canvas.height)*0.3);
+    state.defenseStructures.push(ds);
+    this.placedCount = 1;
+    this.budget -= 2;
+
+    this.act(`AI DEFENSE SYSTEM ONLINE — Difficulty: ${cfg.label}`);
+    this.think('Radar initialized — scanning for threats');
+    this.updateBotUI();
+
+    document.getElementById('bot-thinking').className = 'active';
+    document.getElementById('bot-mode-bar')?.classList.add('active');
+  },
+
+  // ── Stop bot session ──────────────────────────────────────────
+  stop() {
+    this.active = false;
+    this.deployQueue = [];
+    const tl = document.getElementById('bot-thinking');
+    if (tl) { tl.textContent = 'AI offline'; tl.className = ''; }
+    const bar = document.getElementById('bot-mode-bar');
+    if (bar) bar.classList.remove('active');
+  },
+
+  // ── Update bot HUD ────────────────────────────────────────────
+  updateBotUI() {
+    if (!this.active) return;
+    const budgetEl = document.getElementById('bot-budget-bar');
+    if (budgetEl) budgetEl.style.width = (this.budget / this.maxBudget * 100) + '%';
+    const bstatEl = document.getElementById('bot-stat-units');
+    if (bstatEl) bstatEl.textContent = state.defenseStructures.filter(d=>d.active).length;
+    const bbudEl = document.getElementById('bot-stat-budget');
+    if (bbudEl) bbudEl.textContent = Math.floor(this.budget);
+    const bplacedEl = document.getElementById('bot-placed');
+    if (bplacedEl) bplacedEl.textContent = this.placedCount;
+  },
+};
+
+// ── Bot mode UI controls ──────────────────────────────────────
+let botDifficulty = 'normal';
+
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    botDifficulty = btn.dataset.diff;
+  });
+});
+
+document.getElementById('btn-vs-bot').addEventListener('click', () => {
+  document.getElementById('normal-controls').style.display = 'none';
+  document.getElementById('bot-panel').classList.add('visible');
+});
+
+document.getElementById('btn-start-bot').addEventListener('click', () => {
+  // Reset game state completely
+  state.entities = [];
+  state.explosions = [];
+  state.particles = [];
+  state.defenseStructures = [];
+  state.baseHP = CFG.BASE_HP;
+  state.stats = { launched:0, destroyed:0, jammed:0, spoofed:0, hit:0, dmg:0, interceptors:0 };
+  state.time = 0;
+  document.getElementById('log-entries').innerHTML = '';
+  document.getElementById('outcome-banner').className = '';
+
+  BOT.start(botDifficulty);
+  const diff = BOT.DIFFICULTIES[BOT.difficulty];
+
+  document.getElementById('btn-start-bot').style.display = 'none';
+  document.getElementById('btn-stop-bot').style.display = 'block';
+  document.getElementById('instructions').style.opacity = '0';
+
+  // Inject bot HUD bar content
+  const botBar = document.getElementById('bot-mode-bar');
+  botBar.innerHTML = `
+    <span id="bot-mode-title" style="font-family:'Orbitron',monospace;font-size:11px;color:${diff.color};letter-spacing:3px;text-shadow:0 0 10px ${diff.color}">
+      ⚔ VS BOT — ${diff.label}
+    </span>
+    <span class="bot-stat">DEFENSE UNITS: <span id="bot-stat-units" style="color:var(--cyan)">1</span></span>
+    <span class="bot-stat">AI BUDGET:
+      <span id="bot-stat-budget" style="color:var(--yellow)">${diff.budget}</span>
+      <div id="bot-budget-bar-outer" style="display:inline-block;vertical-align:middle;width:80px;height:6px;background:#0a1a10;border:1px solid var(--border);border-radius:1px;overflow:hidden;margin-left:4px;">
+        <div id="bot-budget-bar" style="height:100%;background:var(--yellow);width:100%;transition:width 0.4s;"></div>
+      </div>
+    </span>
+    <span class="bot-stat">DEPLOYED: <span id="bot-placed" style="color:var(--green)">1</span></span>
+    <span id="bot-thinking" class="active" style="margin-left:auto;font-size:9px;color:var(--cyan);letter-spacing:1px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">◈ AI initializing…</span>
+  `;
+  botBar.classList.add('active');
+
+  addLog(`⚔ VS BOT STARTED — Difficulty: ${diff.label}`, 'info');
+  addLog('▶ YOU ARE OFFENSE — launch attacks using the weapon panel!', 'info');
+  addLog('▶ AI will dynamically build its defense in real-time', 'info');
+  showToast(`⚔ VS BOT — ${diff.label} — Launch your attack!`);
+});
+
+document.getElementById('btn-stop-bot').addEventListener('click', () => {
+  BOT.stop();
+  document.getElementById('btn-start-bot').style.display = 'block';
+  document.getElementById('btn-stop-bot').style.display = 'none';
+  document.getElementById('bot-mode-bar').classList.remove('active');
+  document.getElementById('bot-panel').classList.remove('visible');
+  document.getElementById('normal-controls').style.display = '';
+  addLog('VS BOT mode ended', 'info');
+});
+
+// ── Check win/loss conditions in bot mode ─────────────────────
+function checkBotOutcome() {
+  if (!BOT.active || BOT._outcomeShown) return;
+
+  // DEFEAT: base destroyed — BOT wins
+  if (state.baseHP <= 0) {
+    BOT._outcomeShown = true;
+    BOT.stop();
+    const interceptRate = state.stats.launched > 0
+      ? Math.round((state.stats.destroyed + state.stats.jammed + state.stats.spoofed) / state.stats.launched * 100) : 0;
+    const banner = document.getElementById('outcome-banner');
+    banner.className = 'visible defeat';
+    document.getElementById('outcome-title').textContent = 'BASE DESTROYED';
+    document.getElementById('outcome-title').style.color = '#ff3344';
+    document.getElementById('outcome-sub').textContent  = 'THE AI DEFENSE WAS TOO STRONG';
+    document.getElementById('outcome-stats').innerHTML = `
+      Damage Dealt: ${state.stats.dmg} HP<br>
+      Your Threats Launched: ${state.stats.launched}<br>
+      AI Intercepted: ${state.stats.destroyed + state.stats.jammed + state.stats.spoofed} (${interceptRate}%)<br>
+      AI Units Deployed: ${BOT.placedCount}<br>
+      Battle Time: ${state.time.toFixed(1)}s
+    `;
+    document.getElementById('btn-outcome-ok').style.color = '#ff3344';
+    return;
+  }
+
+  // PLAYER VICTORY: all threats dead AND at least 5 were launched
+  const activeThreats = state.entities.filter(e => e.status === 'active' && !e.isIntercept);
+  if (state.stats.launched >= 5 && activeThreats.length === 0 && BOT.deployQueue.length === 0) {
+    if (!BOT._victoryCheck) {
+      // Give 4 seconds for stragglers before declaring victory
+      BOT._victoryCheck = setTimeout(() => {
+        BOT._victoryCheck = null;
+        if (!BOT.active || BOT._outcomeShown) return;
+        const stillActive = state.entities.filter(e => e.status === 'active' && !e.isIntercept);
+        if (stillActive.length === 0 && state.baseHP > 0) {
+          BOT._outcomeShown = true;
+          BOT.stop();
+          const rate = Math.round((state.stats.destroyed + state.stats.jammed + state.stats.spoofed) / state.stats.launched * 100);
+          const banner = document.getElementById('outcome-banner');
+          banner.className = 'visible';
+          document.getElementById('outcome-title').textContent = 'YOU WIN!';
+          document.getElementById('outcome-title').style.color = '#00ff88';
+          document.getElementById('outcome-sub').textContent  = 'YOUR ATTACK WORE DOWN THE AI DEFENSE';
+          document.getElementById('outcome-stats').innerHTML = `
+            Base HP Remaining: ${state.baseHP}/${CFG.BASE_HP}<br>
+            Damage Dealt: ${state.stats.dmg} HP<br>
+            Threats Launched: ${state.stats.launched}<br>
+            AI Intercept Rate: ${rate}%<br>
+            AI Units Deployed: ${BOT.placedCount}<br>
+            Battle Time: ${state.time.toFixed(1)}s
+          `;
+          document.getElementById('btn-outcome-ok').style.color = '#00ff88';
+        }
+      }, 4000);
+    }
+  }
+}
+
+document.getElementById('btn-outcome-ok').addEventListener('click', () => {
+  document.getElementById('outcome-banner').className = '';
+  document.getElementById('btn-start-bot').style.display = 'block';
+  document.getElementById('btn-stop-bot').style.display = 'none';
+  const bar = document.getElementById('bot-mode-bar');
+  bar.classList.remove('active');
+  bar.innerHTML = '';
+  addLog('Battle ended — ready for new match', 'info');
+});
+
+// ══════════════════════════════════════════════════════════════
+//  MAP UPLOAD, NIGHT VISION & BASE CUSTOMIZATION
+// ══════════════════════════════════════════════════════════════
+
+// ── Map state ─────────────────────────────────────────────────
+const mapState = {
+  image:       null,        // HTMLImageElement if loaded
+  opacity:     0.55,        // 0.1 – 1.0
+  nvMode:      false,       // night vision active?
+  placingBase: false,       // clicking to reposition base?
+  baseX:       null,        // custom base X (null = center)
+  baseY:       null,        // custom base Y (null = center)
+};
+
+// ── Override getBasePos to respect custom position ────────────
+// (Replaces the original getBasePos defined earlier — JS hoisting means
+//  this later definition wins for all future calls.)
+function getBasePos() {
+  if (mapState.baseX !== null && mapState.baseY !== null) {
+    return { x: mapState.baseX, y: mapState.baseY };
+  }
+  return { x: canvas.width / 2, y: canvas.height / 2 };
+}
+
+// ── Map upload via click ───────────────────────────────────────
+const mapZone   = document.getElementById('map-upload-zone');
+const mapInput  = document.getElementById('map-file-input');
+const mapBgEl   = document.getElementById('map-bg');
+
+mapZone.addEventListener('click', () => mapInput.click());
+mapInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) loadMapFile(file);
+  mapInput.value = ''; // reset so same file can be re-selected
+});
+
+// ── Drag & drop onto upload zone ──────────────────────────────
+mapZone.addEventListener('dragover', (e) => { e.preventDefault(); mapZone.classList.add('drag'); });
+mapZone.addEventListener('dragleave', () => mapZone.classList.remove('drag'));
+mapZone.addEventListener('drop', (e) => {
+  e.preventDefault(); mapZone.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadMapFile(file);
+});
+
+// Also allow dropping anywhere on the canvas
+const wrap2 = document.getElementById('canvas-wrap');
+wrap2.addEventListener('dragover', (e) => e.preventDefault());
+wrap2.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) loadMapFile(file);
+});
+
+function loadMapFile(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    mapState.image = img;
+    mapBgEl.src    = url;
+    mapBgEl.classList.add('visible');
+    applyMapStyle();
+    mapZone.innerHTML = `<span class="uico">✓</span><span style="color:var(--green)">MAP LOADED</span>`;
+    showToast('✓ Map loaded — click ◎ PLACE BASE to position your base');
+    addLog('Map image loaded', 'info');
+  };
+  img.src = url;
+}
+
+function applyMapStyle() {
+  if (!mapState.image) return;
+  mapBgEl.style.opacity = mapState.nvMode ? '0.72' : mapState.opacity;
+  document.getElementById('canvas-wrap').classList.toggle('nv-mode', mapState.nvMode);
+}
+
+// ── Night-vision overlay (scanlines + vignette drawn each frame) ─
+const nvCanvas = document.getElementById('nv-overlay');
+const nvCtx    = nvCanvas.getContext('2d');
+let nvScanY    = 0;
+
+function resizeNvCanvas() {
+  nvCanvas.width  = canvas.width;
+  nvCanvas.height = canvas.height;
+}
+
+function drawNightVision() {
+  if (!mapState.nvMode) { nvCtx.clearRect(0, 0, nvCanvas.width, nvCanvas.height); return; }
+
+  nvCanvas.width = canvas.width; // auto-clears
+  nvCanvas.height = canvas.height;
+  const w = nvCanvas.width, h = nvCanvas.height;
+
+  // Scanlines — fine horizontal lines
+  nvCtx.fillStyle = 'rgba(0,0,0,0.18)';
+  for (let y = 0; y < h; y += 3) {
+    nvCtx.fillRect(0, y, w, 1);
+  }
+
+  // Moving bright scanline
+  nvScanY = (nvScanY + 0.8) % h;
+  const scanGrad = nvCtx.createLinearGradient(0, nvScanY - 6, 0, nvScanY + 6);
+  scanGrad.addColorStop(0, 'rgba(0,255,80,0)');
+  scanGrad.addColorStop(0.5, 'rgba(0,255,80,0.06)');
+  scanGrad.addColorStop(1, 'rgba(0,255,80,0)');
+  nvCtx.fillStyle = scanGrad;
+  nvCtx.fillRect(0, nvScanY - 6, w, 12);
+
+  // Vignette — dark circular edge
+  const vig = nvCtx.createRadialGradient(w/2, h/2, h*0.3, w/2, h/2, h*0.75);
+  vig.addColorStop(0, 'transparent');
+  vig.addColorStop(1, 'rgba(0,0,0,0.72)');
+  nvCtx.fillStyle = vig;
+  nvCtx.fillRect(0, 0, w, h);
+
+  // Green tint glow
+  nvCtx.fillStyle = 'rgba(0,255,80,0.025)';
+  nvCtx.fillRect(0, 0, w, h);
+
+  // Subtle noise (pixel-level static)
+  const imageData = nvCtx.getImageData(0, 0, w, h);
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4 * 12) { // sparse for performance
+    const noise = (Math.random() - 0.5) * 18;
+    d[i+1] = Math.min(255, Math.max(0, d[i+1] + noise)); // green channel only
+  }
+  nvCtx.putImageData(imageData, 0, 0);
+
+  // HUD decoration: top ruler ticks (like the reference image)
+  nvCtx.strokeStyle = 'rgba(0,255,120,0.25)';
+  nvCtx.lineWidth = 1;
+  nvCtx.beginPath();
+  nvCtx.moveTo(0, 18); nvCtx.lineTo(w, 18); nvCtx.stroke();
+  nvCtx.fillStyle = 'rgba(0,255,120,0.3)';
+  nvCtx.font = '8px "Share Tech Mono"';
+  nvCtx.textAlign = 'center';
+  for (let i = 0; i <= 18; i++) {
+    const tx = (w / 18) * i;
+    nvCtx.beginPath(); nvCtx.moveTo(tx, 14); nvCtx.lineTo(tx, 18); nvCtx.stroke();
+    if (i % 2 === 0) nvCtx.fillText(i * 10, tx, 12);
+  }
+
+  // Bottom ruler
+  nvCtx.beginPath();
+  nvCtx.moveTo(0, h - 18); nvCtx.lineTo(w, h - 18); nvCtx.stroke();
+  nvCtx.textAlign = 'left';
+  nvCtx.fillStyle = 'rgba(0,255,120,0.22)';
+  nvCtx.font = '8px "Share Tech Mono"';
+  nvCtx.fillText('SEARCH.', 14, h - 24);
+
+  // Side ruler right
+  nvCtx.beginPath();
+  nvCtx.moveTo(w - 14, 0); nvCtx.lineTo(w - 14, h); nvCtx.stroke();
+  for (let i = 0; i < 20; i++) {
+    const ty = (h / 20) * i;
+    nvCtx.beginPath(); nvCtx.moveTo(w - 14, ty); nvCtx.lineTo(w - 10, ty); nvCtx.stroke();
+  }
+
+  // Corner data text (top-left, like reference)
+  nvCtx.fillStyle = 'rgba(0,255,120,0.22)';
+  nvCtx.font = '7px "Share Tech Mono"';
+  nvCtx.textAlign = 'left';
+  const timeStr = new Date().toISOString().replace('T', ' ').substring(0, 19);
+  nvCtx.fillText('SEARCH.', 14, 34);
+  nvCtx.fillText(`T+${state.time.toFixed(1)}s`, 14, 44);
+  nvCtx.fillText(`LAT ${(28.7 + state.time * 0.0001).toFixed(5)}`, 14, 54);
+  nvCtx.fillText(`LON ${(77.1 + state.time * 0.0001).toFixed(5)}`, 14, 64);
+
+  // Top-right data block
+  nvCtx.textAlign = 'right';
+  nvCtx.fillText('SEARCH.', w - 18, 34);
+  nvCtx.fillText(`ALT: ${(312 + Math.sin(state.time)*2).toFixed(0)}m`, w - 18, 44);
+  nvCtx.fillText(`AZ: ${(180 + state.time*0.5 % 360).toFixed(1)}°`, w - 18, 54);
+}
+
+// ── NV toggle ──────────────────────────────────────────────────
+document.getElementById('btn-nv').addEventListener('click', () => {
+  mapState.nvMode = !mapState.nvMode;
+  document.getElementById('btn-nv').classList.toggle('on', mapState.nvMode);
+  document.getElementById('nv-overlay').classList.toggle('visible', mapState.nvMode);
+  // Also activate NV even without a map image
+  document.getElementById('canvas-wrap').classList.toggle('nv-mode', mapState.nvMode);
+  if (mapState.image) applyMapStyle();
+  showToast(mapState.nvMode ? '◉ Night vision ON' : '◉ Night vision OFF');
+});
+
+// ── Opacity controls ──────────────────────────────────────────
+document.getElementById('btn-map-opacity-up').addEventListener('click', () => {
+  mapState.opacity = Math.min(1.0, mapState.opacity + 0.1);
+  if (!mapState.nvMode) mapBgEl.style.opacity = mapState.opacity;
+  showToast(`Map opacity: ${Math.round(mapState.opacity * 100)}%`);
+});
+document.getElementById('btn-map-opacity-dn').addEventListener('click', () => {
+  mapState.opacity = Math.max(0.05, mapState.opacity - 0.1);
+  if (!mapState.nvMode) mapBgEl.style.opacity = mapState.opacity;
+  showToast(`Map opacity: ${Math.round(mapState.opacity * 100)}%`);
+});
+
+// ── Clear map ─────────────────────────────────────────────────
+document.getElementById('btn-clear-map').addEventListener('click', () => {
+  mapState.image = null;
+  mapBgEl.src = '';
+  mapBgEl.classList.remove('visible');
+  document.getElementById('canvas-wrap').classList.remove('nv-mode');
+  mapState.nvMode = false;
+  document.getElementById('btn-nv').classList.remove('on');
+  document.getElementById('nv-overlay').classList.remove('visible');
+  mapZone.innerHTML = `<span class="uico">🗺</span><span>UPLOAD MAP IMAGE</span>`;
+  showToast('Map removed');
+});
+
+// ── Place-base mode ───────────────────────────────────────────
+const placeBaseBadge = document.getElementById('place-base-badge');
+const placeBaseBtn   = document.getElementById('btn-place-base');
+
+placeBaseBtn.addEventListener('click', () => {
+  mapState.placingBase = !mapState.placingBase;
+  placeBaseBtn.classList.toggle('on', mapState.placingBase);
+  placeBaseBadge.style.display = mapState.placingBase ? 'block' : 'none';
+  if (mapState.placingBase) {
+    showToast('◎ Click anywhere on the map to place base');
+    addLog('Base placement mode — click to position', 'info');
+  }
+});
+
+// Hook into canvas click for base placement
+canvas.addEventListener('click', (e) => {
+  if (!mapState.placingBase) return;
+  e.stopPropagation(); // prevent normal click handler from firing
+  const rect = canvas.getBoundingClientRect();
+  mapState.baseX = e.clientX - rect.left;
+  mapState.baseY = e.clientY - rect.top;
+  mapState.placingBase = false;
+  placeBaseBtn.classList.remove('on');
+  placeBaseBadge.style.display = 'none';
+  showToast('✓ Base repositioned');
+  addLog(`Base moved to (${Math.round(mapState.baseX)}, ${Math.round(mapState.baseY)})`, 'info');
+}, true); // capture phase — runs before the existing click handler
+
+// ── HP Customizer ─────────────────────────────────────────────
+function setBaseHP(newHP) {
+  newHP = Math.max(100, Math.min(99999, parseInt(newHP) || 1000));
+  CFG.BASE_HP = newHP;
+  state.baseHP = newHP;
+  document.getElementById('hp-input').value = newHP;
+  document.getElementById('base-hp-val').textContent = `${newHP} / ${newHP} HP`;
+  document.getElementById('base-hp-bar').style.width = '100%';
+  showToast(`✓ Base HP set to ${newHP.toLocaleString()}`);
+  addLog(`Base HP customized: ${newHP.toLocaleString()} HP`, 'info');
+}
+
+document.getElementById('hp-set-btn').addEventListener('click', () => {
+  setBaseHP(document.getElementById('hp-input').value);
+});
+document.getElementById('hp-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') setBaseHP(e.target.value);
+});
+document.querySelectorAll('.hp-pre').forEach(btn => {
+  btn.addEventListener('click', () => setBaseHP(btn.dataset.hp));
+});
+
+// Patch clear-field to also restore custom HP
+const _origClearBtn = document.getElementById('btn-clear');
+_origClearBtn.addEventListener('click', () => {
+  // HP is preserved — only reset current HP to max
+  state.baseHP = CFG.BASE_HP;
+});
+
+// ── Hook drawNightVision into render loop ─────────────────────
+// drawNightVision() is called at end of render() below via nvMode flag — 
+// no separate wrapper needed; render() already checks mapState.nvMode
+
+// ══════════════════════════════════════════════════════════════
+//  FOG OF WAR ENGINE
+//  ─ Cell-based reveal grid (50px cells)
+//  ─ Recon drones burn away fog within 140px as they fly
+//  ─ Revealed cells stay revealed permanently
+//  ─ Defense units hidden until revealed (draw as radar ping only)
+//  ─ Base hidden until revealed
+//  ─ Dark green military tint + scan static on unrevealed areas
+// ══════════════════════════════════════════════════════════════
+
+const fowCanvas  = document.getElementById('fow-canvas');
+const fowCtx     = fowCanvas.getContext('2d');
+const FOW_CELL   = 20;   // pixels per fog cell (smaller = smoother reveal)
+const FOW_REVEAL_R = 140; // recon drone reveal radius px
+
+const fowState = {
+  active:  false,         // is FOW currently on?
+  cells:   null,          // 2D boolean array — true = revealed
+  cols:    0,
+  rows:    0,
+  staticOffset: 0,        // animated noise offset
+  baseRevealed: false,    // base location known?
+};
+
+function fowInit() {
+  fowCanvas.width  = canvas.width;
+  fowCanvas.height = canvas.height;
+  fowState.cols = Math.ceil(canvas.width  / FOW_CELL) + 1;
+  fowState.rows = Math.ceil(canvas.height / FOW_CELL) + 1;
+  fowState.cells = Array.from({ length: fowState.rows }, () =>
+    new Array(fowState.cols).fill(false)
+  );
+  fowState.baseRevealed = false;
+  fowCanvas.classList.add('active');
+  document.getElementById('fow-status').classList.add('visible');
+  addLog('◈ FOG OF WAR ACTIVE — deploy recon drones!', 'hit');
+}
+
+function fowClear() {
+  fowState.active  = false;
+  fowState.cells   = null;
+  fowState.baseRevealed = false;
+  fowCanvas.classList.remove('active');
+  document.getElementById('fow-status').classList.remove('visible');
+  // Make all structures visible again
+  state.defenseStructures.forEach(d => { d.fowRevealed = true; });
+}
+
+// Called every frame by render() when fowState.active
+function drawFog() {
+  if (!fowState.active || !fowState.cells) return;
+
+  fowCanvas.width = canvas.width; // clears + resizes
+  fowCanvas.height = canvas.height;
+  const w = canvas.width, h = canvas.height;
+
+  fowState.staticOffset += 0.4;
+
+  // Draw unrevealed areas as dark green military static
+  for (let row = 0; row < fowState.rows; row++) {
+    for (let col = 0; col < fowState.cols; col++) {
+      if (fowState.cells[row][col]) continue; // revealed — skip
+
+      const px = col * FOW_CELL;
+      const py = row * FOW_CELL;
+      const cw = Math.min(FOW_CELL, w - px);
+      const ch = Math.min(FOW_CELL, h - py);
+      if (cw <= 0 || ch <= 0) continue;
+
+      // Base dark green fill
+      fowCtx.fillStyle = '#000d04';
+      fowCtx.fillRect(px, py, cw, ch);
+
+      // Layered noise — military scan static feel
+      const t = fowState.staticOffset;
+      const noise = Math.sin(px * 0.08 + t * 0.03) * Math.cos(py * 0.06 + t * 0.02);
+      const brightness = 0.05 + Math.abs(noise) * 0.08;
+      fowCtx.fillStyle = `rgba(0,${Math.floor(60 + brightness * 120)},${Math.floor(10 + brightness * 30)},0.92)`;
+      fowCtx.fillRect(px, py, cw, ch);
+    }
+  }
+
+  // Horizontal scan line moving down
+  const scanY = (fowState.staticOffset * 1.2) % h;
+  const scanGrad = fowCtx.createLinearGradient(0, scanY - 8, 0, scanY + 8);
+  scanGrad.addColorStop(0, 'transparent');
+  scanGrad.addColorStop(0.5, 'rgba(0,255,80,0.035)');
+  scanGrad.addColorStop(1, 'transparent');
+  fowCtx.fillStyle = scanGrad;
+  fowCtx.fillRect(0, scanY - 8, w, 16);
+
+  // Soft feather edges at revealed/unrevealed boundaries
+  // (uses shadow blur trick on a separate pass)
+  fowCtx.globalCompositeOperation = 'destination-in';
+  for (let row = 0; row < fowState.rows; row++) {
+    for (let col = 0; col < fowState.cols; col++) {
+      if (!fowState.cells[row][col]) continue;
+      const px = col * FOW_CELL;
+      const py = row * FOW_CELL;
+      fowCtx.clearRect(px, py, FOW_CELL + 1, FOW_CELL + 1);
+    }
+  }
+  fowCtx.globalCompositeOperation = 'source-over';
+
+  // Radar ping blips — brief flickers at hidden defense positions
+  state.defenseStructures.forEach(d => {
+    if (d.fowRevealed || !d.active) return;
+    const col = Math.floor(d.x / FOW_CELL);
+    const row = Math.floor(d.y / FOW_CELL);
+    if (row < 0 || row >= fowState.rows || col < 0 || col >= fowState.cols) return;
+    if (fowState.cells[row][col]) return; // already revealed area
+    // Occasional ping blip (random flicker ~every 3s per unit)
+    if (Math.random() < 0.003) {
+      fowCtx.save();
+      fowCtx.globalAlpha = 0.25 + Math.random() * 0.3;
+      fowCtx.strokeStyle = '#00ff88';
+      fowCtx.lineWidth = 1;
+      fowCtx.beginPath();
+      fowCtx.arc(d.x, d.y, 6 + Math.random() * 8, 0, Math.PI * 2);
+      fowCtx.stroke();
+      fowCtx.restore();
+    }
+  });
+}
+
+// Reveal fog cells within radius of a point
+function fowReveal(cx, cy, radius) {
+  if (!fowState.active || !fowState.cells) return;
+  const cellR = Math.ceil(radius / FOW_CELL);
+  const centerCol = Math.floor(cx / FOW_CELL);
+  const centerRow = Math.floor(cy / FOW_CELL);
+
+  let anyNew = false;
+  for (let dr = -cellR; dr <= cellR; dr++) {
+    for (let dc = -cellR; dc <= cellR; dc++) {
+      const row = centerRow + dr;
+      const col = centerCol + dc;
+      if (row < 0 || row >= fowState.rows || col < 0 || col >= fowState.cols) continue;
+      const px = (col + 0.5) * FOW_CELL;
+      const py = (row + 0.5) * FOW_CELL;
+      if (Math.hypot(px - cx, py - cy) <= radius) {
+        if (!fowState.cells[row][col]) anyNew = true;
+        fowState.cells[row][col] = true;
+      }
+    }
+  }
+
+  if (anyNew) {
+    // Check if base is now revealed
+    const bp = getBasePos();
+    if (!fowState.baseRevealed && Math.hypot(cx - bp.x, cy - bp.y) < radius + 30) {
+      fowState.baseRevealed = true;
+      addLog('◈ RECON: BASE LOCATION REVEALED!', 'hit');
+      showToast('◎ Base discovered!');
+    }
+    // Check which defense structures are now revealed
+    state.defenseStructures.forEach(d => {
+      if (d.fowRevealed) return;
+      if (Math.hypot(d.x - cx, d.y - cy) < radius) {
+        d.fowRevealed = true;
+        addLog(`◈ RECON revealed: ${d.label}`, 'jam');
+        // Visual reveal ring on wrap
+        const rect = canvas.getBoundingClientRect();
+        const wRect = wrap.getBoundingClientRect();
+        const ring = document.createElement('div');
+        ring.className = 'recon-reveal-ring';
+        ring.style.left = (d.x + rect.left - wRect.left) + 'px';
+        ring.style.top  = (d.y + rect.top  - wRect.top)  + 'px';
+        wrap.appendChild(ring);
+        setTimeout(() => ring.remove(), 1300);
+      }
+    });
+  }
+}
+
+// Called each Entity.update() tick for recon drones
+function fowCheckRecon(entity) {
+  if (!fowState.active) return;
+  if (entity.type === 'recon_drone' && entity.status === 'active') {
+    fowReveal(entity.x, entity.y, FOW_REVEAL_R);
+  }
+}
+
+// ── DefenseStructure.draw patch — skip hidden units ──────────
+// We patch by overriding the draw call in the render loop.
+// fowRevealed flag is checked there.
+
+// ── Activate FOW (called by Ground Zero deploy or hide-defense btn)
+function activateFOW() {
+  fowState.active = true;
+  fowInit();
+  // Mark all existing defense structures as hidden
+  state.defenseStructures.forEach(d => { d.fowRevealed = false; });
+}
+
+// ── "Hide Defenses" button (normal mode) ────────────────────────
+let hideDefenseMode = false;
+
+document.getElementById('btn-hide-defense').addEventListener('click', () => {
+  hideDefenseMode = !hideDefenseMode;
+  document.getElementById('btn-hide-defense').classList.toggle('on', hideDefenseMode);
+
+  if (hideDefenseMode) {
+    fowState.active = true;
+    fowInit();
+    state.defenseStructures.forEach(d => { d.fowRevealed = false; });
+    showToast('◉ Defense hidden — enemy must use recon drones');
+    addLog('◈ Defenses cloaked — FOG OF WAR enabled', 'info');
+  } else {
+    fowClear();
+    hideDefenseMode = false;
+    showToast('◉ Defenses visible');
+    addLog('◈ FOG OF WAR disabled', 'info');
+  }
+});
+
+// ── Ground Zero deploy ─────────────────────────────────────────
+function deployGroundZero() {
+  // Collect all available presets (built-in non-GZ + saved formations)
+  const candidates = [
+    ...DEFENSE_PRESETS.filter(p => !p.isGroundZero && p.units.length > 0),
+    ...loadSavedFormations('defense').filter(f => f.units && f.units.length > 0),
+  ];
+
+  if (candidates.length === 0) {
+    showToast('No formations available for Ground Zero!', true);
+    return;
+  }
+
+  // Pick random
+  const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+
+  // Clear field, deploy chosen formation silently
+  state.defenseStructures = [];
+  const bw = canvas.width, bh = canvas.height;
+
+  // Randomise base position slightly for variety
+  const angle  = Math.random() * Math.PI * 2;
+  const offset = 40 + Math.random() * 80;
+  const cx = canvas.width / 2, cy = canvas.height / 2;
+  mapState.baseX = Math.max(80, Math.min(bw - 80, cx + Math.cos(angle) * offset));
+  mapState.baseY = Math.max(80, Math.min(bh - 80, cy + Math.sin(angle) * offset));
+
+  chosen.units.forEach(u => {
+    const x = u.rx * bw, y = u.ry * bh;
+    const ds = new DefenseStructure(u.type, x, y);
+    ds.fowRevealed = false; // hidden until recon
+    state.defenseStructures.push(ds);
+  });
+
+  // Activate FOW
+  fowState.active = true;
+  fowInit();
+
+  addLog(`◈ GROUND ZERO: formation deployed — ${chosen.units.length} units hidden`, 'hit');
+  addLog('◈ BASE location randomised — deploy recon to find it!', 'hit');
+  showToast('⚠ GROUND ZERO — Deploy recon drones first!');
+  document.getElementById('instructions').style.opacity = '0';
+}
+
+// ── Hook recon reveal into Entity.update ──────────────────────
+// Patch entity update — save original prototype
+const _origEntityUpdate = Entity.prototype.update;
+Entity.prototype.update = function() {
+  _origEntityUpdate.call(this);
+  if (this.type === 'recon_drone' && this.status === 'active') {
+    fowCheckRecon(this);
+  }
+};
+
+// ── Patch render to skip hidden defenses and base ─────────────
+// We modify the defense draw loop in gameLoop/render via a wrapper
+// (Already handled below in drawFoggedFrame)
+
+// ── FOW-aware defense draw ─────────────────────────────────────
+function drawDefenses() {
+  state.defenseStructures.forEach(d => {
+    if (fowState.active && !d.fowRevealed) {
+      // Hidden — only draw if destroyed wreck (so player sees impact)
+      if (!d.active) {
+        // Draw destroyed wreck at location ONLY if base area is revealed
+        const bp = getBasePos();
+        // Still show wreck in revealed areas
+        const col = Math.floor(d.x / FOW_CELL);
+        const row = Math.floor(d.y / FOW_CELL);
+        const inRevealed = fowState.cells &&
+          row >= 0 && row < fowState.rows &&
+          col >= 0 && col < fowState.cols &&
+          fowState.cells[row][col];
+        if (inRevealed) d.draw();
+      }
+      return; // skip drawing hidden active units
+    }
+    d.draw();
+  });
+}
+
+// ── FOW-aware base draw ────────────────────────────────────────
+function drawBaseConditional() {
+  if (fowState.active && !fowState.baseRevealed) {
+    // Draw "???" marker instead of real base
+    const cx = canvas.width / 2, cy = canvas.height / 2;
+    // Faint radar sweep hint at canvas center
+    ctx.save();
+    ctx.globalAlpha = 0.12 + Math.sin(Date.now() * 0.002) * 0.06;
+    ctx.strokeStyle = '#00ff88';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,6]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 40, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#00ff8822';
+    ctx.font = '9px "Share Tech Mono"';
+    ctx.textAlign = 'center';
+    ctx.fillText('???', cx, cy + 3);
+    ctx.restore();
+    return;
+  }
+  drawBase();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+resizeCanvas(); // safe to call now — CFG and drawGrid are defined
+buildAttackButtons();
+buildCountSel();
+buildDefenseButtons();
+
+// ── Auto-seed AEGIS FORTRESS into saved formations (once) ────
+(function seedAegisSaved() {
+  const saved = loadSavedFormations('defense');
+  const alreadySeeded = saved.some(f => f._id === 'aegis_fortress');
+  if (!alreadySeeded) {
+    const aegis = DEFENSE_PRESETS.find(p => p.id === 'aegis_fortress');
+    if (aegis) {
+      saved.unshift({ name: aegis.name, units: aegis.units, _id: 'aegis_fortress', _pinned: true });
+      saveSavedFormations('defense', saved);
+    }
+  }
+})();
+
+renderDefenseFormations();
+renderAttackFormations();
+addLog('Battlefield simulation ready', 'info');
+addLog('Select weapon → click map to deploy', 'info');
+addLog('Place defense systems to protect base', 'info');
+addLog('▶ Try Iron Dome preset in Defense Formations →', 'info');
+
+requestAnimationFrame(gameLoop);
+</script>
 </body>
 </html>
